@@ -236,33 +236,33 @@ export default function ResultsPage() {
             {/* ASRS Score */}
             <div className="bg-white rounded-lg shadow-lg p-6">
               <h2 className="text-xl font-bold text-gray-900 mb-4">
-                ASRS - ADHD Screening
+                ASRS - ADHD Screening (Part A)
               </h2>
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Part A (Screening)</span>
+                  <span className="text-sm text-gray-600">Total Score</span>
                   <span className="text-lg font-semibold">
-                    {results.asrs.partAScore}/24
+                    {results.asrs.score}/24
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-primary-600 h-2 rounded-full"
-                    style={{ width: `${(results.asrs.partAScore / 24) * 100}%` }}
+                    style={{ width: `${(results.asrs.score / 24) * 100}%` }}
                   />
                 </div>
               </div>
               <div className="mb-4">
                 <div className="flex justify-between items-center mb-2">
-                  <span className="text-sm text-gray-600">Total Score</span>
+                  <span className="text-sm text-gray-600">High Responses (Often/Very Often)</span>
                   <span className="text-lg font-semibold">
-                    {results.asrs.totalScore}/72
+                    {results.asrs.highResponseCount}/6
                   </span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
                   <div
                     className="bg-primary-600 h-2 rounded-full"
-                    style={{ width: `${(results.asrs.totalScore / 72) * 100}%` }}
+                    style={{ width: `${(results.asrs.highResponseCount / 6) * 100}%` }}
                   />
                 </div>
               </div>
@@ -275,7 +275,7 @@ export default function ResultsPage() {
               >
                 <p className="text-sm font-medium">
                   {results.asrs.likelyADHD
-                    ? '⚠️ Positive screen for ADHD'
+                    ? '⚠️ Positive screen for ADHD (4-6 high responses)'
                     : 'ℹ️ Screen below threshold'}
                 </p>
               </div>
@@ -291,18 +291,18 @@ export default function ResultsPage() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Childhood Inattention</span>
                     <span className="font-semibold">
-                      {results.diva.childhoodInattentionCount}/9
+                      {results.diva.attentionChildCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        results.diva.childhoodInattentionCount >= 5
+                        results.diva.attentionChildCount >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${(results.diva.childhoodInattentionCount / 9) * 100}%`,
+                        width: `${(results.diva.attentionChildCount / 9) * 100}%`,
                       }}
                     />
                   </div>
@@ -311,58 +311,58 @@ export default function ResultsPage() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Current Inattention</span>
                     <span className="font-semibold">
-                      {results.diva.adultInattentionCount}/9
+                      {results.diva.attentionAdultCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        results.diva.adultInattentionCount >= 5
+                        results.diva.attentionAdultCount >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${(results.diva.adultInattentionCount / 9) * 100}%`,
+                        width: `${(results.diva.attentionAdultCount / 9) * 100}%`,
                       }}
                     />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Childhood Hyperactivity</span>
+                    <span className="text-gray-600">Childhood Hyperactive-Impulsive</span>
                     <span className="font-semibold">
-                      {results.diva.childhoodHyperactivityCount}/9
+                      {results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        results.diva.childhoodHyperactivityCount >= 5
+                        (results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount) >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${(results.diva.childhoodHyperactivityCount / 9) * 100}%`,
+                        width: `${((results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount) / 9) * 100}%`,
                       }}
                     />
                   </div>
                 </div>
                 <div>
                   <div className="flex justify-between text-sm mb-1">
-                    <span className="text-gray-600">Current Hyperactivity</span>
+                    <span className="text-gray-600">Current Hyperactive-Impulsive</span>
                     <span className="font-semibold">
-                      {results.diva.adultHyperactivityCount}/9
+                      {results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        results.diva.adultHyperactivityCount >= 5
+                        (results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount) >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${(results.diva.adultHyperactivityCount / 9) * 100}%`,
+                        width: `${((results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount) / 9) * 100}%`,
                       }}
                     />
                   </div>

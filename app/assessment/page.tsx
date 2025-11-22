@@ -14,32 +14,25 @@ import {
   GAD7Answers,
   PHQ9Answers,
   DIVAAnswers,
+  DIVAQuestion,
   CompleteAssessment,
 } from '@/types/assessment';
 import { asrsQuestions, asrsResponseOptions } from '@/data/asrs-questions';
 import { gad7Questions, gad7Intro, gad7ResponseOptions } from '@/data/gad7-questions';
 import { phq9Questions, phq9Intro, phq9ResponseOptions } from '@/data/phq9-questions';
 import {
-  divaChildhoodInattentionQuestions,
-  divaChildhoodHyperactivityQuestions,
-  divaAdultInattentionQuestions,
-  divaAdultHyperactivityQuestions,
+  divaAttentionQuestions,
+  divaHyperactivityQuestions,
+  divaImpulsivityQuestions,
   divaResponseOptions,
+  divaChildhoodFollowUp,
 } from '@/data/diva-questions';
-
-const steps = [
-  'Personal Info',
-  'History',
-  'ASRS',
-  'GAD-7',
-  'PHQ-9',
-  'DIVA',
-  'Review',
-];
+import { calculateASRSScore } from '@/utils/scoring';
 
 export default function AssessmentPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(1);
+  const [skipDIVA, setSkipDIVA] = useState(false);
 
   // State for all form data
   const [personalInfo, setPersonalInfo] = useState<PersonalInformation>({
@@ -77,15 +70,33 @@ export default function AssessmentPage() {
     otherMentalHealthConditions: '',
   });
 
-  const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
   const [gad7Answers, setGad7Answers] = useState<Partial<GAD7Answers>>({});
   const [phq9Answers, setPhq9Answers] = useState<Partial<PHQ9Answers>>({});
+  const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
   const [divaAnswers, setDivaAnswers] = useState<Partial<DIVAAnswers>>({
-    childhoodInattention: {},
-    childhoodHyperactivity: {},
-    adultInattention: {},
-    adultHyperactivity: {},
+    attention: {},
+    hyperactivity: {},
+    impulsivity: {},
   });
+
+  // Calculate steps dynamically
+  const getSteps = () => {
+    const baseSteps = ['Personal Info', 'History', 'GAD-7', 'PHQ-9', 'ASRS'];
+
+    // Check if ASRS is complete to show decision
+    if (Object.keys(asrsAnswers).length === 6) {
+      const score = calculateASRSScore(asrsAnswers as ASRSAnswers);
+      if (score.shouldContinueToDIVA || !skipDIVA) {
+        return [...baseSteps, 'Decision', 'DIVA', 'Review'];
+      } else {
+        return [...baseSteps, 'Decision', 'Review'];
+      }
+    }
+
+    return [...baseSteps, 'Review'];
+  };
+
+  const steps = getSteps();
 
   const handleNext = () => {
     // Validation
@@ -111,6 +122,24 @@ export default function AssessmentPage() {
     }
   };
 
+  const handleContinueToDIVA = () => {
+    setSkipDIVA(false);
+    setCurrentStep(currentStep + 1);
+    window.scrollTo(0, 0);
+  };
+
+  const handleSkipToDone = () => {
+    setSkipDIVA(true);
+    // Skip to review
+    const reviewStep = steps.indexOf('Review');
+    if (reviewStep > 0) {
+      setCurrentStep(reviewStep + 1);
+    } else {
+      setCurrentStep(steps.length);
+    }
+    window.scrollTo(0, 0);
+  };
+
   const handleSubmit = async () => {
     const assessment: CompleteAssessment = {
       personalInfo,
@@ -123,10 +152,7 @@ export default function AssessmentPage() {
       completedDate: new Date().toISOString(),
     };
 
-    // Store in localStorage temporarily (in production, this would go to a backend)
     localStorage.setItem('assessment', JSON.stringify(assessment));
-
-    // Navigate to results page
     router.push('/results');
   };
 
@@ -139,17 +165,20 @@ export default function AssessmentPage() {
       case 2:
         return true; // History is optional
       case 3:
-        return Object.keys(asrsAnswers).length === 18;
-      case 4:
         return Object.keys(gad7Answers).length === 7;
-      case 5:
+      case 4:
         return Object.keys(phq9Answers).length === 9;
+      case 5:
+        return Object.keys(asrsAnswers).length === 6;
       case 6:
+        // Decision step is always complete
+        return true;
+      case 7:
+        if (skipDIVA) return true;
         return (
-          Object.keys(divaAnswers.childhoodInattention || {}).length === 9 &&
-          Object.keys(divaAnswers.childhoodHyperactivity || {}).length === 9 &&
-          Object.keys(divaAnswers.adultInattention || {}).length === 9 &&
-          Object.keys(divaAnswers.adultHyperactivity || {}).length === 9
+          Object.keys(divaAnswers.attention || {}).length === 9 &&
+          Object.keys(divaAnswers.hyperactivity || {}).length === 6 &&
+          Object.keys(divaAnswers.impulsivity || {}).length === 3
         );
       default:
         return true;
@@ -157,8 +186,10 @@ export default function AssessmentPage() {
   };
 
   const renderStep = () => {
-    switch (currentStep) {
-      case 1:
+    const stepName = steps[currentStep - 1];
+
+    switch (stepName) {
+      case 'Personal Info':
         return (
           <PersonalInfoForm
             data={personalInfo}
@@ -166,7 +197,7 @@ export default function AssessmentPage() {
           />
         );
 
-      case 2:
+      case 'History':
         return (
           <HistoryForm
             mentalHealth={mentalHealthHistory}
@@ -176,34 +207,7 @@ export default function AssessmentPage() {
           />
         );
 
-      case 3:
-        return (
-          <div>
-            <div className="section-header">
-              <h2 className="text-2xl font-bold text-gray-900">
-                ASRS - Adult ADHD Self-Report Scale
-              </h2>
-              <p className="text-gray-600 mt-2">
-                Please answer each question based on how you have felt and conducted yourself
-                over the past 6 months.
-              </p>
-            </div>
-            {asrsQuestions.map((q) => (
-              <RadioGroup
-                key={q.id}
-                question={q.text}
-                options={asrsResponseOptions}
-                value={(asrsAnswers as any)[q.id]}
-                onChange={(value) =>
-                  setAsrsAnswers({ ...asrsAnswers, [q.id]: value })
-                }
-                name={q.id}
-              />
-            ))}
-          </div>
-        );
-
-      case 4:
+      case 'GAD-7':
         return (
           <div>
             <div className="section-header">
@@ -225,7 +229,7 @@ export default function AssessmentPage() {
           </div>
         );
 
-      case 5:
+      case 'PHQ-9':
         return (
           <div>
             <div className="section-header">
@@ -256,120 +260,420 @@ export default function AssessmentPage() {
           </div>
         );
 
-      case 6:
+      case 'ASRS':
         return (
           <div>
             <div className="section-header">
               <h2 className="text-2xl font-bold text-gray-900">
-                DIVA 2.0 - Diagnostic Interview for ADHD
+                ASRS - ADHD Screening (Part A)
               </h2>
               <p className="text-gray-600 mt-2">
-                This structured interview assesses ADHD symptoms in childhood and adulthood
-                according to DSM-5 criteria.
+                Please answer each question based on how you have felt and conducted yourself
+                over the past 6 months.
+              </p>
+            </div>
+            {asrsQuestions.map((q) => (
+              <RadioGroup
+                key={q.id}
+                question={q.text}
+                options={asrsResponseOptions}
+                value={(asrsAnswers as any)[q.id]}
+                onChange={(value) =>
+                  setAsrsAnswers({ ...asrsAnswers, [q.id]: value })
+                }
+                name={q.id}
+              />
+            ))}
+          </div>
+        );
+
+      case 'Decision':
+        const asrsScore = calculateASRSScore(asrsAnswers as ASRSAnswers);
+        return (
+          <div>
+            <div className="section-header">
+              <h2 className="text-2xl font-bold text-gray-900">
+                ASRS Screening Results
+              </h2>
+            </div>
+
+            <div className="bg-white rounded-lg shadow-lg p-8 mb-6">
+              <div className="mb-6">
+                <h3 className="text-xl font-semibold text-gray-900 mb-4">Your Score</h3>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-gray-700">
+                    High-response items (Often/Very Often):
+                  </span>
+                  <span className="text-2xl font-bold text-primary-600">
+                    {asrsScore.highResponseCount} / 6
+                  </span>
+                </div>
+                <div className="w-full bg-gray-200 rounded-full h-3">
+                  <div
+                    className="bg-primary-600 h-3 rounded-full transition-all"
+                    style={{ width: `${(asrsScore.highResponseCount / 6) * 100}%` }}
+                  />
+                </div>
+              </div>
+
+              <div className={`p-6 rounded-lg border-l-4 ${
+                asrsScore.shouldContinueToDIVA
+                  ? 'bg-amber-50 border-amber-500'
+                  : 'bg-blue-50 border-blue-500'
+              }`}>
+                <h3 className="text-lg font-semibold mb-3">
+                  {asrsScore.shouldContinueToDIVA
+                    ? '⚠️ This may indicate ADHD'
+                    : 'ℹ️ Lower likelihood of ADHD'}
+                </h3>
+                <p className="text-gray-800 mb-4">{asrsScore.interpretation}</p>
+
+                {asrsScore.shouldContinueToDIVA ? (
+                  <div>
+                    <p className="text-gray-700 mb-4">
+                      We recommend continuing with the full ADHD assessment (DIVA) to provide
+                      comprehensive information for your GP.
+                    </p>
+                    <button
+                      onClick={handleContinueToDIVA}
+                      className="btn-primary w-full"
+                    >
+                      Continue to Full ADHD Assessment (DIVA)
+                    </button>
+                  </div>
+                ) : (
+                  <div>
+                    <p className="text-gray-700 mb-4">
+                      Based on your responses, your symptoms may be more related to anxiety or
+                      depression rather than ADHD.
+                    </p>
+
+                    <div className="bg-white rounded-lg border border-blue-300 p-4 mb-4">
+                      <h4 className="font-semibold text-gray-900 mb-2">
+                        NHS Talking Therapies (Free)
+                      </h4>
+                      <p className="text-sm text-gray-700 mb-3">
+                        You can self-refer to NHS Talking Therapies for anxiety and depression
+                        support without seeing your GP.
+                      </p>
+                      <a
+                        href="https://www.nhs.uk/nhs-services/mental-health-services/find-nhs-talking-therapies-for-anxiety-and-depression/"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-block bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 text-sm font-medium"
+                      >
+                        Find NHS Talking Therapies →
+                      </a>
+                    </div>
+
+                    <div className="border-t border-gray-200 pt-4 mt-4">
+                      <p className="text-gray-700 mb-3">
+                        <strong>Still want to complete the full ADHD assessment?</strong>
+                      </p>
+                      <p className="text-sm text-gray-600 mb-4">
+                        You can continue if you'd like comprehensive ADHD screening for your GP,
+                        or skip to complete your assessment.
+                      </p>
+                      <div className="flex gap-3">
+                        <button
+                          onClick={handleContinueToDIVA}
+                          className="btn-secondary flex-1"
+                        >
+                          Continue to DIVA Assessment
+                        </button>
+                        <button
+                          onClick={handleSkipToDone}
+                          className="btn-primary flex-1"
+                        >
+                          Skip to Complete Assessment
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        );
+
+      case 'DIVA':
+        return (
+          <div>
+            <div className="section-header">
+              <h2 className="text-2xl font-bold text-gray-900">
+                DIVA - Full ADHD Assessment
+              </h2>
+              <p className="text-gray-600 mt-2">
+                For each question, answer about your current symptoms, then about your childhood (aged 5-12).
               </p>
             </div>
 
+            {/* Attention Questions */}
             <div className="mb-12">
               <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
-                Part A: Childhood Symptoms (Before Age 12)
+                Attention
               </h3>
-              <h4 className="text-lg font-semibold text-gray-800 mb-4">Inattention</h4>
-              {divaChildhoodInattentionQuestions.map((q) => (
-                <RadioGroup
-                  key={q.id}
-                  question={q.text}
-                  examples={q.examples}
-                  options={divaResponseOptions}
-                  value={(divaAnswers.childhoodInattention as any)?.[q.id]}
-                  onChange={(value) =>
-                    setDivaAnswers({
-                      ...divaAnswers,
-                      childhoodInattention: {
-                        ...divaAnswers.childhoodInattention,
-                        [q.id]: value,
-                      },
-                    })
-                  }
-                  name={`childhood-inattention-${q.id}`}
-                />
-              ))}
+              {divaAttentionQuestions.map((q) => (
+                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <legend className="text-lg font-medium text-gray-900 mb-4">
+                    {q.text}
+                  </legend>
 
-              <h4 className="text-lg font-semibold text-gray-800 mb-4 mt-8">
-                Hyperactivity & Impulsivity
-              </h4>
-              {divaChildhoodHyperactivityQuestions.map((q) => (
-                <RadioGroup
-                  key={q.id}
-                  question={q.text}
-                  examples={q.examples}
-                  options={divaResponseOptions}
-                  value={(divaAnswers.childhoodHyperactivity as any)?.[q.id]}
-                  onChange={(value) =>
-                    setDivaAnswers({
-                      ...divaAnswers,
-                      childhoodHyperactivity: {
-                        ...divaAnswers.childhoodHyperactivity,
-                        [q.id]: value,
-                      },
-                    })
-                  }
-                  name={`childhood-hyperactivity-${q.id}`}
-                />
+                  {/* Adult response */}
+                  <div className="mb-4">
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.attention as any)?.[q.id]?.adult === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`attention-${q.id}-adult`}
+                            checked={(divaAnswers.attention as any)?.[q.id]?.adult === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                attention: {
+                                  ...divaAnswers.attention,
+                                  [q.id]: { ...currentAnswer, adult: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Childhood follow-up */}
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.attention as any)?.[q.id]?.child === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`attention-${q.id}-child`}
+                            checked={(divaAnswers.attention as any)?.[q.id]?.child === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                attention: {
+                                  ...divaAnswers.attention,
+                                  [q.id]: { ...currentAnswer, child: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
 
+            {/* Hyperactivity Questions */}
             <div className="mb-12">
               <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
-                Part B: Current Adult Symptoms
+                Hyperactivity
               </h3>
-              <h4 className="text-lg font-semibold text-gray-800 mb-4">Inattention</h4>
-              {divaAdultInattentionQuestions.map((q) => (
-                <RadioGroup
-                  key={q.id}
-                  question={q.text}
-                  examples={q.examples}
-                  options={divaResponseOptions}
-                  value={(divaAnswers.adultInattention as any)?.[q.id]}
-                  onChange={(value) =>
-                    setDivaAnswers({
-                      ...divaAnswers,
-                      adultInattention: {
-                        ...divaAnswers.adultInattention,
-                        [q.id]: value,
-                      },
-                    })
-                  }
-                  name={`adult-inattention-${q.id}`}
-                />
-              ))}
+              {divaHyperactivityQuestions.map((q) => (
+                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <legend className="text-lg font-medium text-gray-900 mb-4">
+                    {q.text}
+                  </legend>
 
-              <h4 className="text-lg font-semibold text-gray-800 mb-4 mt-8">
-                Hyperactivity & Impulsivity
-              </h4>
-              {divaAdultHyperactivityQuestions.map((q) => (
-                <RadioGroup
-                  key={q.id}
-                  question={q.text}
-                  examples={q.examples}
-                  options={divaResponseOptions}
-                  value={(divaAnswers.adultHyperactivity as any)?.[q.id]}
-                  onChange={(value) =>
-                    setDivaAnswers({
-                      ...divaAnswers,
-                      adultHyperactivity: {
-                        ...divaAnswers.adultHyperactivity,
-                        [q.id]: value,
-                      },
-                    })
-                  }
-                  name={`adult-hyperactivity-${q.id}`}
-                />
+                  <div className="mb-4">
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.hyperactivity as any)?.[q.id]?.adult === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`hyperactivity-${q.id}-adult`}
+                            checked={(divaAnswers.hyperactivity as any)?.[q.id]?.adult === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.hyperactivity as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                hyperactivity: {
+                                  ...divaAnswers.hyperactivity,
+                                  [q.id]: { ...currentAnswer, adult: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.hyperactivity as any)?.[q.id]?.child === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`hyperactivity-${q.id}-child`}
+                            checked={(divaAnswers.hyperactivity as any)?.[q.id]?.child === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.hyperactivity as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                hyperactivity: {
+                                  ...divaAnswers.hyperactivity,
+                                  [q.id]: { ...currentAnswer, child: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Impulsivity Questions */}
+            <div className="mb-12">
+              <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
+                Impulsivity
+              </h3>
+              {divaImpulsivityQuestions.map((q) => (
+                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <legend className="text-lg font-medium text-gray-900 mb-4">
+                    {q.text}
+                  </legend>
+
+                  <div className="mb-4">
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.impulsivity as any)?.[q.id]?.adult === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`impulsivity-${q.id}-adult`}
+                            checked={(divaAnswers.impulsivity as any)?.[q.id]?.adult === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.impulsivity as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                impulsivity: {
+                                  ...divaAnswers.impulsivity,
+                                  [q.id]: { ...currentAnswer, adult: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-gray-200">
+                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
+                    <div className="flex gap-4">
+                      {divaResponseOptions.map((option) => (
+                        <label
+                          key={String(option.value)}
+                          className={`radio-card flex-1 ${
+                            (divaAnswers.impulsivity as any)?.[q.id]?.child === option.value
+                              ? 'border-primary-600 bg-primary-50'
+                              : 'border-gray-300'
+                          }`}
+                        >
+                          <input
+                            type="radio"
+                            name={`impulsivity-${q.id}-child`}
+                            checked={(divaAnswers.impulsivity as any)?.[q.id]?.child === option.value}
+                            onChange={() => {
+                              const currentAnswer = (divaAnswers.impulsivity as any)?.[q.id] || { adult: false, child: false };
+                              setDivaAnswers({
+                                ...divaAnswers,
+                                impulsivity: {
+                                  ...divaAnswers.impulsivity,
+                                  [q.id]: { ...currentAnswer, child: option.value },
+                                },
+                              });
+                            }}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">
+                            {option.label}
+                          </span>
+                        </label>
+                      ))}
+                    </div>
+                  </div>
+                </div>
               ))}
             </div>
           </div>
         );
 
-      case 7:
+      case 'Review':
         return (
           <div>
             <div className="section-header">
@@ -410,36 +714,40 @@ export default function AssessmentPage() {
               <div className="bg-white border border-gray-200 rounded-lg p-6">
                 <h3 className="text-lg font-semibold mb-4">Completion Status</h3>
                 <ul className="space-y-2">
-                  {steps.slice(0, -1).map((step, idx) => (
-                    <li key={idx} className="flex items-center">
-                      {isStepComplete(idx + 1) ? (
-                        <svg
-                          className="h-5 w-5 text-green-500 mr-2"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      ) : (
-                        <svg
-                          className="h-5 w-5 text-yellow-500 mr-2"
-                          fill="currentColor"
-                          viewBox="0 0 20 20"
-                        >
-                          <path
-                            fillRule="evenodd"
-                            d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
-                            clipRule="evenodd"
-                          />
-                        </svg>
-                      )}
-                      <span className="text-gray-700">{step}</span>
-                    </li>
-                  ))}
+                  {steps.slice(0, -1).map((step, idx) => {
+                    const stepNum = idx + 1;
+                    const completed = stepNum < currentStep || isStepComplete(stepNum);
+                    return (
+                      <li key={idx} className="flex items-center">
+                        {completed ? (
+                          <svg
+                            className="h-5 w-5 text-green-500 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        ) : (
+                          <svg
+                            className="h-5 w-5 text-yellow-500 mr-2"
+                            fill="currentColor"
+                            viewBox="0 0 20 20"
+                          >
+                            <path
+                              fillRule="evenodd"
+                              d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                              clipRule="evenodd"
+                            />
+                          </svg>
+                        )}
+                        <span className="text-gray-700">{step}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
 
@@ -497,13 +805,15 @@ export default function AssessmentPage() {
             </button>
 
             {currentStep < steps.length ? (
-              <button
-                onClick={handleNext}
-                disabled={!isStepComplete(currentStep)}
-                className="btn-primary"
-              >
-                Next
-              </button>
+              steps[currentStep - 1] !== 'Decision' && (
+                <button
+                  onClick={handleNext}
+                  disabled={!isStepComplete(currentStep)}
+                  className="btn-primary"
+                >
+                  Next
+                </button>
+              )
             ) : (
               <button
                 onClick={handleSubmit}

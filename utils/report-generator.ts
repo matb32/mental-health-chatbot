@@ -53,14 +53,13 @@ CURRENT PRESENTATION - ASRS SCREENING RESULTS
 
 ${results.asrs.interpretation}
 
-ASRS Part A Score: ${results.asrs.partAScore}/24 (Screening items)
-ASRS Part B Score: ${results.asrs.partBScore}/48
-ASRS Total Score: ${results.asrs.totalScore}/72
+ASRS Part A Score: ${results.asrs.score}/24 (Sum of responses)
+High Response Count: ${results.asrs.highResponseCount}/6 (Often or Very Often responses)
 
-The ASRS is a validated screening tool with high sensitivity and specificity for
-Adult ADHD. Part A consists of the 6 most predictive items. A score indicating
-"Often" or "Very Often" on 4 or more Part A items suggests clinically significant
-ADHD symptoms.
+The ASRS Part A is a validated 6-item screening tool with high sensitivity and
+specificity for Adult ADHD. These 6 items are the most predictive of ADHD symptoms.
+A result of 4 or more items rated as "Often" or "Very Often" suggests clinically
+significant ADHD symptoms warranting comprehensive diagnostic assessment.
 
 Current Result: ${results.asrs.likelyADHD ? '**POSITIVE SCREEN for ADHD**' : 'Screen does not meet threshold, but symptoms warrant evaluation'}
 
@@ -71,19 +70,23 @@ DIVA STRUCTURED ASSESSMENT RESULTS
 ${results.diva.interpretation}
 
 CHILDHOOD SYMPTOMS (Before Age 12):
-- Inattentive symptoms: ${results.diva.childhoodInattentionCount}/9 criteria met
-- Hyperactive-Impulsive symptoms: ${results.diva.childhoodHyperactivityCount}/9 criteria met
+- Inattentive symptoms: ${results.diva.attentionChildCount}/9 criteria met
+- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount}/9 criteria met
+  (Hyperactivity: ${results.diva.hyperactivityChildCount}/6, Impulsivity: ${results.diva.impulsivityChildCount}/3)
 
 CURRENT ADULT SYMPTOMS:
-- Inattentive symptoms: ${results.diva.adultInattentionCount}/9 criteria met
-- Hyperactive-Impulsive symptoms: ${results.diva.adultHyperactivityCount}/9 criteria met
+- Inattentive symptoms: ${results.diva.attentionAdultCount}/9 criteria met
+- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount}/9 criteria met
+  (Hyperactivity: ${results.diva.hyperactivityAdultCount}/6, Impulsivity: ${results.diva.impulsivityAdultCount}/3)
 
 DSM-5 Diagnostic Criteria: ${results.diva.meetsDSMCriteria ? '**MET**' : 'Not fully met'}
 ${results.diva.meetsDSMCriteria ? `Predominant Presentation: ADHD, ${results.diva.predominantType.toUpperCase()} Type` : ''}
 
-The DIVA 2.0 is a structured diagnostic interview that systematically assesses the
-18 DSM-5 criteria for ADHD across both childhood and adulthood. DSM-5 requires 5 or
-more symptoms in each category, present since childhood and currently causing impairment.
+The DIVA 2.0 is a structured assessment that systematically evaluates the 18 DSM-5
+criteria for ADHD: 9 inattention items, 6 hyperactivity items, and 3 impulsivity items.
+Each symptom is assessed for both childhood (ages 5-12) and current adult presentation
+using Yes/No responses. DSM-5 requires 5 or more symptoms in each category, present
+since childhood and currently causing impairment.
 
 ================================================================================
 CO-OCCURRING MENTAL HEALTH CONCERNS
