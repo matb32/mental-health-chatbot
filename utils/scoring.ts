@@ -10,37 +10,33 @@ import {
   AssessmentResults,
 } from '@/types/assessment';
 
-// ASRS Scoring
+// ASRS Scoring - Part A only (6 questions)
 export function calculateASRSScore(answers: ASRSAnswers): ASRSScore {
   const values = Object.values(answers);
 
-  // Part A: Questions 1-6 (screening questions)
-  const partAScore = values.slice(0, 6).reduce((sum, val) => sum + val, 0);
+  // Sum of Part A scores
+  const score = values.reduce((sum, val) => sum + val, 0);
 
-  // Part B: Questions 7-18
-  const partBScore = values.slice(6).reduce((sum, val) => sum + val, 0);
+  // Count "Often" (3) or "Very Often" (4) responses
+  const highResponseCount = values.filter(val => val >= 3).length;
 
-  const totalScore = partAScore + partBScore;
-
-  // Part A screening: 4 or more questions with responses of "Often" (3) or "Very Often" (4)
-  const partAHighResponses = values.slice(0, 6).filter(val => val >= 3).length;
-  const likelyADHD = partAHighResponses >= 4;
+  // Threshold: 4-6 high responses suggests likely ADHD
+  const likelyADHD = highResponseCount >= 4 && highResponseCount <= 6;
+  const shouldContinueToDIVA = likelyADHD;
 
   let interpretation = '';
-  if (likelyADHD) {
-    interpretation = 'Your responses on the ASRS screening tool suggest symptoms consistent with adult ADHD. Further comprehensive evaluation is strongly recommended.';
-  } else if (partAHighResponses >= 3) {
-    interpretation = 'Your responses suggest some symptoms that may be associated with ADHD. A comprehensive evaluation would be beneficial to clarify the diagnosis.';
+  if (highResponseCount >= 4) {
+    interpretation = 'Your responses suggest symptoms that may indicate ADHD. We recommend continuing with the full ADHD assessment (DIVA).';
   } else {
-    interpretation = 'Your responses on the ASRS screening tool do not strongly suggest ADHD, though this does not rule out the condition. Clinical evaluation is recommended if you have concerns.';
+    interpretation = 'Your responses do not strongly suggest ADHD based on this screening. Your symptoms may be related to anxiety or depression. You can self-refer to NHS Talking Therapies or continue with the full ADHD assessment if you prefer.';
   }
 
   return {
-    partAScore,
-    partBScore,
-    totalScore,
+    score,
+    highResponseCount,
     interpretation,
     likelyADHD,
+    shouldContinueToDIVA,
   };
 }
 
@@ -113,23 +109,28 @@ export function calculatePHQ9Score(answers: PHQ9Answers): PHQ9Score {
   };
 }
 
-// DIVA Scoring
+// DIVA Scoring - Simplified with adult + child responses
 export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
-  // Count "Yes" responses (value of 2) for each section
-  const childhoodInattentionCount = Object.values(answers.childhoodInattention).filter(v => v === 2).length;
-  const childhoodHyperactivityCount = Object.values(answers.childhoodHyperactivity).filter(v => v === 2).length;
-  const adultInattentionCount = Object.values(answers.adultInattention).filter(v => v === 2).length;
-  const adultHyperactivityCount = Object.values(answers.adultHyperactivity).filter(v => v === 2).length;
+  // Count "Yes" responses (true) for each section
+  const attentionAdultCount = Object.values(answers.attention).filter(q => q.adult === true).length;
+  const attentionChildCount = Object.values(answers.attention).filter(q => q.child === true).length;
+
+  const hyperactivityAdultCount = Object.values(answers.hyperactivity).filter(q => q.adult === true).length;
+  const hyperactivityChildCount = Object.values(answers.hyperactivity).filter(q => q.child === true).length;
+
+  const impulsivityAdultCount = Object.values(answers.impulsivity).filter(q => q.adult === true).length;
+  const impulsivityChildCount = Object.values(answers.impulsivity).filter(q => q.child === true).length;
+
+  // Combine hyperactivity and impulsivity for DSM-5 criteria
+  const totalHyperactiveImpulsiveAdult = hyperactivityAdultCount + impulsivityAdultCount;
+  const totalHyperactiveImpulsiveChild = hyperactivityChildCount + impulsivityChildCount;
 
   // DSM-5 Criteria:
   // - 5 or more inattentive symptoms (childhood and current)
   // - 5 or more hyperactive-impulsive symptoms (childhood and current)
-  // - Symptoms present before age 12
-  // - Symptoms present in 2 or more settings
-  // - Clear evidence symptoms interfere with functioning
 
-  const inattentiveCriteria = childhoodInattentionCount >= 5 && adultInattentionCount >= 5;
-  const hyperactiveCriteria = childhoodHyperactivityCount >= 5 && adultHyperactivityCount >= 5;
+  const inattentiveCriteria = attentionChildCount >= 5 && attentionAdultCount >= 5;
+  const hyperactiveCriteria = totalHyperactiveImpulsiveChild >= 5 && totalHyperactiveImpulsiveAdult >= 5;
 
   let predominantType: 'inattentive' | 'hyperactive-impulsive' | 'combined' | 'none';
   let meetsDSMCriteria = false;
@@ -151,9 +152,9 @@ export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
     predominantType = 'none';
     meetsDSMCriteria = false;
 
-    if (adultInattentionCount >= 5 || adultHyperactivityCount >= 5) {
+    if (attentionAdultCount >= 5 || totalHyperactiveImpulsiveAdult >= 5) {
       interpretation = 'Current symptoms suggest possible ADHD, but childhood symptom criteria are not fully met according to this assessment. This could indicate late-onset symptoms or possible recall difficulties. Clinical evaluation is recommended to explore other explanations and assess functional impairment.';
-    } else if (childhoodInattentionCount >= 5 || childhoodHyperactivityCount >= 5) {
+    } else if (attentionChildCount >= 5 || totalHyperactiveImpulsiveChild >= 5) {
       interpretation = 'Childhood symptoms suggest possible ADHD, but current symptom criteria are not fully met. This may indicate symptom reduction with age or compensatory strategies. Clinical evaluation can assess if residual symptoms are present and causing impairment.';
     } else {
       interpretation = 'The DIVA assessment does not indicate sufficient symptoms to meet DSM-5 criteria for ADHD. However, sub-threshold symptoms may still cause impairment and warrant clinical discussion.';
@@ -161,10 +162,12 @@ export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
   }
 
   return {
-    childhoodInattentionCount,
-    childhoodHyperactivityCount,
-    adultInattentionCount,
-    adultHyperactivityCount,
+    attentionAdultCount,
+    attentionChildCount,
+    hyperactivityAdultCount,
+    hyperactivityChildCount,
+    impulsivityAdultCount,
+    impulsivityChildCount,
     meetsDSMCriteria,
     predominantType,
     interpretation,

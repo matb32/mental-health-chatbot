@@ -2,9 +2,9 @@
 export type ASRSResponse = 0 | 1 | 2 | 3 | 4; // Never, Rarely, Sometimes, Often, Very Often
 export type GAD7Response = 0 | 1 | 2 | 3; // Not at all, Several days, More than half the days, Nearly every day
 export type PHQ9Response = 0 | 1 | 2 | 3; // Not at all, Several days, More than half the days, Nearly every day
-export type DIVAResponse = 0 | 1 | 2; // No, Sometimes, Yes
+export type DIVAResponse = boolean; // Yes or No
 
-// ASRS (Adult ADHD Self-Report Scale) - 18 questions
+// ASRS (Adult ADHD Self-Report Scale) - Part A only (6 questions)
 export interface ASRSAnswers {
   q1: ASRSResponse; // Trouble wrapping up details
   q2: ASRSResponse; // Difficulty getting things in order
@@ -12,18 +12,6 @@ export interface ASRSAnswers {
   q4: ASRSResponse; // Avoid tasks requiring sustained mental effort
   q5: ASRSResponse; // Fidget when sitting long
   q6: ASRSResponse; // Feel overly active/compelled to do things
-  q7: ASRSResponse; // Make careless mistakes
-  q8: ASRSResponse; // Difficulty keeping attention
-  q9: ASRSResponse; // Difficulty concentrating
-  q10: ASRSResponse; // Difficulty finding things
-  q11: ASRSResponse; // Easily distracted
-  q12: ASRSResponse; // Leave seat in meetings
-  q13: ASRSResponse; // Feel restless or fidgety
-  q14: ASRSResponse; // Difficulty unwinding
-  q15: ASRSResponse; // Talk too much
-  q16: ASRSResponse; // Finish others' sentences
-  q17: ASRSResponse; // Difficulty waiting turn
-  q18: ASRSResponse; // Interrupt others
 }
 
 // GAD-7 (Generalized Anxiety Disorder) - 7 questions
@@ -51,61 +39,43 @@ export interface PHQ9Answers {
 }
 
 // DIVA (Diagnostic Interview for ADHD in adults)
-// Part A: Childhood symptoms (before age 12)
-export interface DIVAChildhoodInattention {
-  q1: DIVAResponse; // Fails to give close attention to details
-  q2: DIVAResponse; // Difficulty sustaining attention
-  q3: DIVAResponse; // Does not seem to listen
-  q4: DIVAResponse; // Does not follow through on instructions
-  q5: DIVAResponse; // Difficulty organizing tasks
-  q6: DIVAResponse; // Avoids tasks requiring sustained mental effort
-  q7: DIVAResponse; // Loses things necessary for tasks
-  q8: DIVAResponse; // Easily distracted by extraneous stimuli
-  q9: DIVAResponse; // Forgetful in daily activities
+// Simplified: Adult questions with childhood follow-up
+export interface DIVAQuestion {
+  adult: DIVAResponse; // Yes/No for current symptoms
+  child: DIVAResponse; // Yes/No for childhood symptoms (aged 5-12)
 }
 
-export interface DIVAChildhoodHyperactivity {
-  q1: DIVAResponse; // Fidgets with hands or feet
-  q2: DIVAResponse; // Leaves seat in classroom
-  q3: DIVAResponse; // Runs about or climbs excessively
-  q4: DIVAResponse; // Difficulty playing quietly
-  q5: DIVAResponse; // "On the go" or "driven by a motor"
-  q6: DIVAResponse; // Talks excessively
-  q7: DIVAResponse; // Blurts out answers
-  q8: DIVAResponse; // Difficulty waiting turn
-  q9: DIVAResponse; // Interrupts or intrudes on others
+export interface DIVAAttention {
+  q1: DIVAQuestion; // Fails to give close attention to details
+  q2: DIVAQuestion; // Difficulty sustaining attention
+  q3: DIVAQuestion; // Does not seem to listen
+  q4: DIVAQuestion; // Does not follow through on instructions
+  q5: DIVAQuestion; // Difficulty organizing tasks
+  q6: DIVAQuestion; // Avoids tasks requiring sustained mental effort
+  q7: DIVAQuestion; // Loses things necessary for tasks
+  q8: DIVAQuestion; // Easily distracted
+  q9: DIVAQuestion; // Forgetful in daily activities
 }
 
-// Part B: Current symptoms (adulthood)
-export interface DIVAAdultInattention {
-  q1: DIVAResponse; // Careless mistakes in work
-  q2: DIVAResponse; // Difficulty sustaining attention
-  q3: DIVAResponse; // Does not seem to listen
-  q4: DIVAResponse; // Does not follow through
-  q5: DIVAResponse; // Difficulty organizing
-  q6: DIVAResponse; // Avoids sustained mental effort
-  q7: DIVAResponse; // Loses things
-  q8: DIVAResponse; // Easily distracted
-  q9: DIVAResponse; // Forgetful
+export interface DIVAHyperactivity {
+  q1: DIVAQuestion; // Fidgets with hands or feet
+  q2: DIVAQuestion; // Leaves seat when expected to remain
+  q3: DIVAQuestion; // Feels restless
+  q4: DIVAQuestion; // Difficulty with quiet leisure activities
+  q5: DIVAQuestion; // "On the go" or "driven by a motor"
+  q6: DIVAQuestion; // Talks excessively
 }
 
-export interface DIVAAdultHyperactivity {
-  q1: DIVAResponse; // Fidgets with hands or feet
-  q2: DIVAResponse; // Leaves seat when expected to remain
-  q3: DIVAResponse; // Feels restless
-  q4: DIVAResponse; // Difficulty with leisure activities
-  q5: DIVAResponse; // "On the go" or "driven by a motor"
-  q6: DIVAResponse; // Talks excessively
-  q7: DIVAResponse; // Blurts out answers
-  q8: DIVAResponse; // Difficulty waiting
-  q9: DIVAResponse; // Interrupts or intrudes
+export interface DIVAImpulsivity {
+  q1: DIVAQuestion; // Blurts out answers
+  q2: DIVAQuestion; // Difficulty waiting turn
+  q3: DIVAQuestion; // Interrupts or intrudes on others
 }
 
 export interface DIVAAnswers {
-  childhoodInattention: DIVAChildhoodInattention;
-  childhoodHyperactivity: DIVAChildhoodHyperactivity;
-  adultInattention: DIVAAdultInattention;
-  adultHyperactivity: DIVAAdultHyperactivity;
+  attention: DIVAAttention;
+  hyperactivity: DIVAHyperactivity;
+  impulsivity: DIVAImpulsivity;
 }
 
 // Mental Health and Family History
@@ -159,11 +129,11 @@ export interface CompleteAssessment {
 
 // Scoring Results
 export interface ASRSScore {
-  partAScore: number; // First 6 questions
-  partBScore: number; // Questions 7-18
-  totalScore: number;
+  score: number; // Part A score (0-24)
+  highResponseCount: number; // Number of "Often" or "Very Often" responses
   interpretation: string;
   likelyADHD: boolean;
+  shouldContinueToDIVA: boolean;
 }
 
 export interface GAD7Score {
@@ -180,10 +150,12 @@ export interface PHQ9Score {
 }
 
 export interface DIVAScore {
-  childhoodInattentionCount: number;
-  childhoodHyperactivityCount: number;
-  adultInattentionCount: number;
-  adultHyperactivityCount: number;
+  attentionAdultCount: number;
+  attentionChildCount: number;
+  hyperactivityAdultCount: number;
+  hyperactivityChildCount: number;
+  impulsivityAdultCount: number;
+  impulsivityChildCount: number;
   meetsDSMCriteria: boolean;
   predominantType: 'inattentive' | 'hyperactive-impulsive' | 'combined' | 'none';
   interpretation: string;
