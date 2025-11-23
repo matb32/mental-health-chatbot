@@ -38,44 +38,66 @@ export interface PHQ9Answers {
   q9: PHQ9Response; // Thoughts of self-harm
 }
 
-// DIVA (Diagnostic Interview for ADHD in adults)
-// Simplified: Adult questions with childhood follow-up
-export interface DIVAQuestion {
-  adult: DIVAResponse; // Yes/No for current symptoms
-  child: DIVAResponse; // Yes/No for childhood symptoms (aged 5-12)
+// DIVA 5 (Diagnostic Interview for ADHD in adults)
+// Each question has multiple example checkboxes
+// Symptom is positive if 2 or more examples are checked (including "other" with text)
+export interface DIVAQuestionResponse {
+  examples: string[]; // Array of selected example IDs
+  otherText?: string; // Text for "Other" option
+  childhoodPresent: boolean; // Yes/No for childhood symptoms (age 5-12)
 }
 
 export interface DIVAAttention {
-  q1: DIVAQuestion; // Fails to give close attention to details
-  q2: DIVAQuestion; // Difficulty sustaining attention
-  q3: DIVAQuestion; // Does not seem to listen
-  q4: DIVAQuestion; // Does not follow through on instructions
-  q5: DIVAQuestion; // Difficulty organizing tasks
-  q6: DIVAQuestion; // Avoids tasks requiring sustained mental effort
-  q7: DIVAQuestion; // Loses things necessary for tasks
-  q8: DIVAQuestion; // Easily distracted
-  q9: DIVAQuestion; // Forgetful in daily activities
+  q1: DIVAQuestionResponse; // Fails to give close attention to details
+  q2: DIVAQuestionResponse; // Difficulty sustaining attention
+  q3: DIVAQuestionResponse; // Does not seem to listen
+  q4: DIVAQuestionResponse; // Does not follow through on instructions
+  q5: DIVAQuestionResponse; // Difficulty organizing tasks
+  q6: DIVAQuestionResponse; // Avoids tasks requiring sustained mental effort
+  q7: DIVAQuestionResponse; // Loses things necessary for tasks
+  q8: DIVAQuestionResponse; // Easily distracted
+  q9: DIVAQuestionResponse; // Forgetful in daily activities
 }
 
-export interface DIVAHyperactivity {
-  q1: DIVAQuestion; // Fidgets with hands or feet
-  q2: DIVAQuestion; // Leaves seat when expected to remain
-  q3: DIVAQuestion; // Feels restless
-  q4: DIVAQuestion; // Difficulty with quiet leisure activities
-  q5: DIVAQuestion; // "On the go" or "driven by a motor"
-  q6: DIVAQuestion; // Talks excessively
+export interface DIVAHyperactivityImpulsivity {
+  q1: DIVAQuestionResponse; // Fidgets with hands or feet
+  q2: DIVAQuestionResponse; // Leaves seat when expected to remain
+  q3: DIVAQuestionResponse; // Feels restless
+  q4: DIVAQuestionResponse; // Difficulty with quiet leisure activities
+  q5: DIVAQuestionResponse; // "On the go" or "driven by a motor"
+  q6: DIVAQuestionResponse; // Talks excessively
+  q7: DIVAQuestionResponse; // Blurts out answers
+  q8: DIVAQuestionResponse; // Difficulty waiting turn
+  q9: DIVAQuestionResponse; // Interrupts or intrudes on others
 }
 
-export interface DIVAImpulsivity {
-  q1: DIVAQuestion; // Blurts out answers
-  q2: DIVAQuestion; // Difficulty waiting turn
-  q3: DIVAQuestion; // Interrupts or intrudes on others
+export interface DIVASupplement {
+  adultMoreThanOthers: boolean; // More symptoms than others (adult)
+  childhoodMoreThanOthers: boolean; // More symptoms than others (childhood)
+}
+
+export interface DIVACriterionB {
+  alwaysHadSymptoms: boolean;
+  ageOfOnset?: number; // If not always had symptoms
+}
+
+export interface DIVACriterionC {
+  workEducation: string[]; // Selected impairment examples
+  workEducationOther?: string;
+  relationship: string[]; // Selected impairment examples
+  relationshipOther?: string;
+  socialContacts: string[]; // Selected impairment examples
+  socialContactsOther?: string;
+  selfConfidence: string[]; // Selected impairment examples
+  selfConfidenceOther?: string;
 }
 
 export interface DIVAAnswers {
   attention: DIVAAttention;
-  hyperactivity: DIVAHyperactivity;
-  impulsivity: DIVAImpulsivity;
+  hyperactivityImpulsivity: DIVAHyperactivityImpulsivity;
+  supplement: DIVASupplement;
+  criterionB: DIVACriterionB;
+  criterionC: DIVACriterionC;
 }
 
 // Mental Health and Family History
@@ -150,15 +172,21 @@ export interface PHQ9Score {
 }
 
 export interface DIVAScore {
-  attentionAdultCount: number;
+  attentionAdultCount: number; // Count of positive attention symptoms (2+ examples checked)
   attentionChildCount: number;
-  hyperactivityAdultCount: number;
-  hyperactivityChildCount: number;
-  impulsivityAdultCount: number;
-  impulsivityChildCount: number;
+  hyperactivityImpulsivityAdultCount: number; // Combined count
+  hyperactivityImpulsivityChildCount: number;
   meetsDSMCriteria: boolean;
   predominantType: 'inattentive' | 'hyperactive-impulsive' | 'combined' | 'none';
   interpretation: string;
+  supplement: DIVASupplement;
+  criterionB: DIVACriterionB;
+  criterionCImpairment: {
+    workEducation: number; // Number of impairments selected
+    relationship: number;
+    socialContacts: number;
+    selfConfidence: number;
+  };
 }
 
 export interface AssessmentResults {

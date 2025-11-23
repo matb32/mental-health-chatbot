@@ -109,28 +109,52 @@ export function calculatePHQ9Score(answers: PHQ9Answers): PHQ9Score {
   };
 }
 
-// DIVA Scoring - Simplified with adult + child responses
+// DIVA 5 Scoring - Checkbox-based system
+// A symptom is positive if 2 or more examples are checked (including "other" with text)
 export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
-  // Count "Yes" responses (true) for each section
-  const attentionAdultCount = Object.values(answers.attention).filter(q => q.adult === true).length;
-  const attentionChildCount = Object.values(answers.attention).filter(q => q.child === true).length;
+  // Helper function to check if a question has a positive symptom
+  const isPositiveSymptom = (questionResponse: any): boolean => {
+    if (!questionResponse) return false;
 
-  const hyperactivityAdultCount = Object.values(answers.hyperactivity).filter(q => q.adult === true).length;
-  const hyperactivityChildCount = Object.values(answers.hyperactivity).filter(q => q.child === true).length;
+    const examplesCount = questionResponse.examples?.length || 0;
+    const hasOtherText = questionResponse.otherText && questionResponse.otherText.trim().length > 0;
+    const totalChecked = examplesCount + (hasOtherText ? 1 : 0);
 
-  const impulsivityAdultCount = Object.values(answers.impulsivity).filter(q => q.adult === true).length;
-  const impulsivityChildCount = Object.values(answers.impulsivity).filter(q => q.child === true).length;
+    return totalChecked >= 2;
+  };
 
-  // Combine hyperactivity and impulsivity for DSM-5 criteria
-  const totalHyperactiveImpulsiveAdult = hyperactivityAdultCount + impulsivityAdultCount;
-  const totalHyperactiveImpulsiveChild = hyperactivityChildCount + impulsivityChildCount;
+  // Count positive symptoms for attention (adult and childhood)
+  let attentionAdultCount = 0;
+  let attentionChildCount = 0;
+
+  Object.values(answers.attention || {}).forEach((response: any) => {
+    if (isPositiveSymptom(response)) {
+      attentionAdultCount++;
+    }
+    if (response?.childhoodPresent === true) {
+      attentionChildCount++;
+    }
+  });
+
+  // Count positive symptoms for hyperactivity-impulsivity (adult and childhood)
+  let hyperactivityImpulsivityAdultCount = 0;
+  let hyperactivityImpulsivityChildCount = 0;
+
+  Object.values(answers.hyperactivityImpulsivity || {}).forEach((response: any) => {
+    if (isPositiveSymptom(response)) {
+      hyperactivityImpulsivityAdultCount++;
+    }
+    if (response?.childhoodPresent === true) {
+      hyperactivityImpulsivityChildCount++;
+    }
+  });
 
   // DSM-5 Criteria:
   // - 5 or more inattentive symptoms (childhood and current)
   // - 5 or more hyperactive-impulsive symptoms (childhood and current)
 
   const inattentiveCriteria = attentionChildCount >= 5 && attentionAdultCount >= 5;
-  const hyperactiveCriteria = totalHyperactiveImpulsiveChild >= 5 && totalHyperactiveImpulsiveAdult >= 5;
+  const hyperactiveCriteria = hyperactivityImpulsivityChildCount >= 5 && hyperactivityImpulsivityAdultCount >= 5;
 
   let predominantType: 'inattentive' | 'hyperactive-impulsive' | 'combined' | 'none';
   let meetsDSMCriteria = false;
@@ -152,25 +176,38 @@ export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
     predominantType = 'none';
     meetsDSMCriteria = false;
 
-    if (attentionAdultCount >= 5 || totalHyperactiveImpulsiveAdult >= 5) {
+    if (attentionAdultCount >= 5 || hyperactivityImpulsivityAdultCount >= 5) {
       interpretation = 'Current symptoms suggest possible ADHD, but childhood symptom criteria are not fully met according to this assessment. This could indicate late-onset symptoms or possible recall difficulties. Clinical evaluation is recommended to explore other explanations and assess functional impairment.';
-    } else if (attentionChildCount >= 5 || totalHyperactiveImpulsiveChild >= 5) {
+    } else if (attentionChildCount >= 5 || hyperactivityImpulsivityChildCount >= 5) {
       interpretation = 'Childhood symptoms suggest possible ADHD, but current symptom criteria are not fully met. This may indicate symptom reduction with age or compensatory strategies. Clinical evaluation can assess if residual symptoms are present and causing impairment.';
     } else {
       interpretation = 'The DIVA assessment does not indicate sufficient symptoms to meet DSM-5 criteria for ADHD. However, sub-threshold symptoms may still cause impairment and warrant clinical discussion.';
     }
   }
 
+  // Count Criterion C impairments
+  const criterionCImpairment = {
+    workEducation: (answers.criterionC?.workEducation?.length || 0) +
+                   (answers.criterionC?.workEducationOther ? 1 : 0),
+    relationship: (answers.criterionC?.relationship?.length || 0) +
+                  (answers.criterionC?.relationshipOther ? 1 : 0),
+    socialContacts: (answers.criterionC?.socialContacts?.length || 0) +
+                    (answers.criterionC?.socialContactsOther ? 1 : 0),
+    selfConfidence: (answers.criterionC?.selfConfidence?.length || 0) +
+                    (answers.criterionC?.selfConfidenceOther ? 1 : 0),
+  };
+
   return {
     attentionAdultCount,
     attentionChildCount,
-    hyperactivityAdultCount,
-    hyperactivityChildCount,
-    impulsivityAdultCount,
-    impulsivityChildCount,
+    hyperactivityImpulsivityAdultCount,
+    hyperactivityImpulsivityChildCount,
     meetsDSMCriteria,
     predominantType,
     interpretation,
+    supplement: answers.supplement || { adultMoreThanOthers: false, childhoodMoreThanOthers: false },
+    criterionB: answers.criterionB || { alwaysHadSymptoms: false },
+    criterionCImpairment,
   };
 }
 
