@@ -71,13 +71,11 @@ ${results.diva.interpretation}
 
 CHILDHOOD SYMPTOMS (Before Age 12):
 - Inattentive symptoms: ${results.diva.attentionChildCount}/9 criteria met
-- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount}/9 criteria met
-  (Hyperactivity: ${results.diva.hyperactivityChildCount}/6, Impulsivity: ${results.diva.impulsivityChildCount}/3)
+- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityImpulsivityChildCount}/9 criteria met
 
 CURRENT ADULT SYMPTOMS:
 - Inattentive symptoms: ${results.diva.attentionAdultCount}/9 criteria met
-- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount}/9 criteria met
-  (Hyperactivity: ${results.diva.hyperactivityAdultCount}/6, Impulsivity: ${results.diva.impulsivityAdultCount}/3)
+- Hyperactive-Impulsive symptoms: ${results.diva.hyperactivityImpulsivityAdultCount}/9 criteria met
 
 DSM-5 Diagnostic Criteria: ${results.diva.meetsDSMCriteria ? '**MET**' : 'Not fully met'}
 ${results.diva.meetsDSMCriteria ? `Predominant Presentation: ADHD, ${results.diva.predominantType.toUpperCase()} Type` : ''}

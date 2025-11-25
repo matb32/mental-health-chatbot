@@ -22,11 +22,11 @@ import { gad7Questions, gad7Intro, gad7ResponseOptions } from '@/data/gad7-quest
 import { phq9Questions, phq9Intro, phq9ResponseOptions } from '@/data/phq9-questions';
 import {
   divaAttentionQuestions,
-  divaHyperactivityQuestions,
-  divaImpulsivityQuestions,
-  divaResponseOptions,
-  divaChildhoodFollowUp,
-} from '@/data/diva-questions';
+  divaHyperactivityImpulsivityQuestions,
+  divaSupplementQuestions,
+  divaCriterionB,
+  divaCriterionC,
+} from '@/data/diva5-questions';
 import { calculateASRSScore } from '@/utils/scoring';
 
 export default function AssessmentPage() {
@@ -75,8 +75,25 @@ export default function AssessmentPage() {
   const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
   const [divaAnswers, setDivaAnswers] = useState<Partial<DIVAAnswers>>({
     attention: {},
-    hyperactivity: {},
-    impulsivity: {},
+    hyperactivityImpulsivity: {},
+    supplement: {
+      adultMoreThanOthers: false,
+      childhoodMoreThanOthers: false,
+    },
+    criterionB: {
+      alwaysHadSymptoms: false,
+      ageOfOnset: undefined,
+    },
+    criterionC: {
+      workEducation: [],
+      workEducationOther: '',
+      relationship: [],
+      relationshipOther: '',
+      socialContacts: [],
+      socialContactsOther: '',
+      selfConfidence: [],
+      selfConfidenceOther: '',
+    },
   });
 
   // Calculate steps dynamically

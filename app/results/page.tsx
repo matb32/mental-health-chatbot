@@ -331,18 +331,18 @@ export default function ResultsPage() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Childhood Hyperactive-Impulsive</span>
                     <span className="font-semibold">
-                      {results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount}/9
+                      {results.diva.hyperactivityImpulsivityChildCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        (results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount) >= 5
+                        results.diva.hyperactivityImpulsivityChildCount >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${((results.diva.hyperactivityChildCount + results.diva.impulsivityChildCount) / 9) * 100}%`,
+                        width: `${(results.diva.hyperactivityImpulsivityChildCount / 9) * 100}%`,
                       }}
                     />
                   </div>
@@ -351,18 +351,18 @@ export default function ResultsPage() {
                   <div className="flex justify-between text-sm mb-1">
                     <span className="text-gray-600">Current Hyperactive-Impulsive</span>
                     <span className="font-semibold">
-                      {results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount}/9
+                      {results.diva.hyperactivityImpulsivityAdultCount}/9
                     </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
                       className={`h-2 rounded-full ${
-                        (results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount) >= 5
+                        results.diva.hyperactivityImpulsivityAdultCount >= 5
                           ? 'bg-green-600'
                           : 'bg-gray-400'
                       }`}
                       style={{
-                        width: `${((results.diva.hyperactivityAdultCount + results.diva.impulsivityAdultCount) / 9) * 100}%`,
+                        width: `${(results.diva.hyperactivityImpulsivityAdultCount / 9) * 100}%`,
                       }}
                     />
                   </div>
