@@ -110,16 +110,20 @@ export function calculatePHQ9Score(answers: PHQ9Answers): PHQ9Score {
 }
 
 // DIVA 5 Scoring - Checkbox-based system
-// A symptom is positive if 2 or more examples are checked (including "other" with text)
+// A symptom is positive if symptomPresent=true AND 2+ examples are checked (including "other" with text)
 export function calculateDIVAScore(answers: DIVAAnswers): DIVAScore {
   // Helper function to check if a question has a positive symptom
   const isPositiveSymptom = (questionResponse: any): boolean => {
     if (!questionResponse) return false;
 
+    // Must explicitly say symptom is present
+    if (questionResponse.symptomPresent !== true) return false;
+
     const examplesCount = questionResponse.examples?.length || 0;
     const hasOtherText = questionResponse.otherText && questionResponse.otherText.trim().length > 0;
     const totalChecked = examplesCount + (hasOtherText ? 1 : 0);
 
+    // Need 2+ examples to validate the symptom
     return totalChecked >= 2;
   };
 

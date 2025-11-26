@@ -14,7 +14,6 @@ import {
   GAD7Answers,
   PHQ9Answers,
   DIVAAnswers,
-  DIVAQuestion,
   CompleteAssessment,
 } from '@/types/assessment';
 import { asrsQuestions, asrsResponseOptions } from '@/data/asrs-questions';
@@ -73,7 +72,7 @@ export default function AssessmentPage() {
   const [gad7Answers, setGad7Answers] = useState<Partial<GAD7Answers>>({});
   const [phq9Answers, setPhq9Answers] = useState<Partial<PHQ9Answers>>({});
   const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
-  const [divaAnswers, setDivaAnswers] = useState<Partial<DIVAAnswers>>({
+  const [divaAnswers, setDivaAnswers] = useState<any>({
     attention: {},
     hyperactivityImpulsivity: {},
     supplement: {
@@ -192,10 +191,10 @@ export default function AssessmentPage() {
         return true;
       case 7:
         if (skipDIVA) return true;
+        // Check that all 18 symptom questions are answered (9 attention + 9 hyperactivity-impulsivity)
         return (
           Object.keys(divaAnswers.attention || {}).length === 9 &&
-          Object.keys(divaAnswers.hyperactivity || {}).length === 6 &&
-          Object.keys(divaAnswers.impulsivity || {}).length === 3
+          Object.keys(divaAnswers.hyperactivityImpulsivity || {}).length === 9
         );
       default:
         return true;
@@ -415,8 +414,20 @@ export default function AssessmentPage() {
 
       case 'DIVA':
         // Helper functions for checkbox handling
+        const handleSymptomPresentToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
+
+          setDivaAnswers({
+            ...divaAnswers,
+            [section]: {
+              ...divaAnswers[section],
+              [questionId]: { ...currentQuestion, symptomPresent: value, examples: value ? currentQuestion.examples : [] },
+            },
+          });
+        };
+
         const handleExampleToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, exampleId: string) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
           const currentExamples = currentQuestion.examples || [];
 
           const newExamples = currentExamples.includes(exampleId)
@@ -433,7 +444,7 @@ export default function AssessmentPage() {
         };
 
         const handleOtherTextChange = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, text: string) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
 
           setDivaAnswers({
             ...divaAnswers,
@@ -445,7 +456,7 @@ export default function AssessmentPage() {
         };
 
         const handleChildhoodToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
 
           setDivaAnswers({
             ...divaAnswers,
@@ -459,7 +470,7 @@ export default function AssessmentPage() {
         const handleCriterionCToggle = (area: 'workEducation' | 'relationship' | 'socialContacts' | 'selfConfidence', exampleId: string) => {
           const currentExamples = divaAnswers.criterionC?.[area] || [];
           const newExamples = currentExamples.includes(exampleId)
-            ? currentExamples.filter(id => id !== exampleId)
+            ? currentExamples.filter((id: string) => id !== exampleId)
             : [...currentExamples, exampleId];
 
           setDivaAnswers({
@@ -478,7 +489,7 @@ export default function AssessmentPage() {
                 DIVA 5.0 - Diagnostic Interview for ADHD in Adults
               </h2>
               <p className="text-gray-600 mt-2">
-                For each symptom, check the examples that apply to you. A symptom is considered present if you check 2 or more examples.
+                For each symptom question, first indicate if you experience it, then provide examples.
               </p>
             </div>
 
@@ -488,7 +499,8 @@ export default function AssessmentPage() {
                 Part 1: Symptoms of Attention-Deficit (DSM-5 Criterion A1)
               </h3>
               {divaAttentionQuestions.map((q, idx) => {
-                const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { examples: [], otherText: '', childhoodPresent: false };
+                const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
+                const symptomPresent = currentAnswer.symptomPresent || false;
                 const selectedExamples = currentAnswer.examples || [];
                 const otherText = currentAnswer.otherText || '';
                 const childhoodPresent = currentAnswer.childhoodPresent || false;
@@ -499,52 +511,71 @@ export default function AssessmentPage() {
                       {idx + 1}. {q.text}
                     </h4>
 
-                    {/* Examples checkboxes */}
+                    {/* Symptom Present Yes/No */}
                     <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Check all that apply:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {q.examples.map((example) => (
-                          <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedExamples.includes(example.id)}
-                              onChange={() => handleExampleToggle('attention', q.id, example.id)}
-                              className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{example.text}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      {/* Other field */}
-                      <div className="mt-3">
-                        <label className="flex items-start">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Do you experience this symptom?</p>
+                      <div className="flex gap-4">
+                        <label className={`radio-card flex-1 ${symptomPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
-                            type="checkbox"
-                            checked={otherText.length > 0}
-                            onChange={(e) => {
-                              if (!e.target.checked) {
-                                handleOtherTextChange('attention', q.id, '');
-                              }
-                            }}
-                            className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            type="radio"
+                            name={`${q.id}-present`}
+                            checked={symptomPresent === true}
+                            onChange={() => handleSymptomPresentToggle('attention', q.id, true)}
+                            className="sr-only"
                           />
-                          <span className="ml-2 text-sm font-medium text-gray-700">Other:</span>
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
-                        <input
-                          type="text"
-                          value={otherText}
-                          onChange={(e) => handleOtherTextChange('attention', q.id, e.target.value)}
-                          placeholder="Describe other examples..."
-                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                        />
+                        <label className={`radio-card flex-1 ${symptomPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                          <input
+                            type="radio"
+                            name={`${q.id}-present`}
+                            checked={symptomPresent === false}
+                            onChange={() => handleSymptomPresentToggle('attention', q.id, false)}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">No</span>
+                        </label>
                       </div>
                     </div>
 
-                    {/* Childhood follow-up */}
+                    {/* Examples checkboxes - only show if symptom present */}
+                    {symptomPresent && (
+                      <div className="mb-4 pl-4 border-l-2 border-blue-200">
+                        <p className="text-sm font-medium text-gray-700 mb-3">Check all examples that apply:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {q.examples.map((example) => (
+                            <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedExamples.includes(example.id)}
+                                onChange={() => handleExampleToggle('attention', q.id, example.id)}
+                                className="flex-shrink-0 mt-0.5 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                              />
+                              <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Other field */}
+                        <div className="mt-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                          <input
+                            type="text"
+                            value={otherText}
+                            onChange={(e) => handleOtherTextChange('attention', q.id, e.target.value)}
+                            placeholder="Describe other examples..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Childhood follow-up - always show */}
                     <div className="pt-4 border-t border-gray-200">
                       <p className="text-sm font-medium text-gray-700 mb-3">
-                        And how was that for you in childhood - age 5-12?
+                        And did you experience similar symptoms as a child? (Aged 7-12)
                       </p>
                       <div className="flex gap-4">
                         <label className={`radio-card flex-1 ${childhoodPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -582,7 +613,8 @@ export default function AssessmentPage() {
                 Part 2: Symptoms of Hyperactivity-Impulsivity (DSM-5 Criterion A2)
               </h3>
               {divaHyperactivityImpulsivityQuestions.map((q, idx) => {
-                const currentAnswer = (divaAnswers.hyperactivityImpulsivity as any)?.[q.id] || { examples: [], otherText: '', childhoodPresent: false };
+                const currentAnswer = (divaAnswers.hyperactivityImpulsivity as any)?.[q.id] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
+                const symptomPresent = currentAnswer.symptomPresent || false;
                 const selectedExamples = currentAnswer.examples || [];
                 const otherText = currentAnswer.otherText || '';
                 const childhoodPresent = currentAnswer.childhoodPresent || false;
@@ -593,52 +625,71 @@ export default function AssessmentPage() {
                       {idx + 1}. {q.text}
                     </h4>
 
-                    {/* Examples checkboxes */}
+                    {/* Symptom Present Yes/No */}
                     <div className="mb-4">
-                      <p className="text-sm font-medium text-gray-700 mb-3">Check all that apply:</p>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                        {q.examples.map((example) => (
-                          <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={selectedExamples.includes(example.id)}
-                              onChange={() => handleExampleToggle('hyperactivityImpulsivity', q.id, example.id)}
-                              className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
-                            />
-                            <span className="ml-2 text-sm text-gray-700">{example.text}</span>
-                          </label>
-                        ))}
-                      </div>
-
-                      {/* Other field */}
-                      <div className="mt-3">
-                        <label className="flex items-start">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Do you experience this symptom?</p>
+                      <div className="flex gap-4">
+                        <label className={`radio-card flex-1 ${symptomPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
-                            type="checkbox"
-                            checked={otherText.length > 0}
-                            onChange={(e) => {
-                              if (!e.target.checked) {
-                                handleOtherTextChange('hyperactivityImpulsivity', q.id, '');
-                              }
-                            }}
-                            className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            type="radio"
+                            name={`${q.id}-present`}
+                            checked={symptomPresent === true}
+                            onChange={() => handleSymptomPresentToggle('hyperactivityImpulsivity', q.id, true)}
+                            className="sr-only"
                           />
-                          <span className="ml-2 text-sm font-medium text-gray-700">Other:</span>
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
-                        <input
-                          type="text"
-                          value={otherText}
-                          onChange={(e) => handleOtherTextChange('hyperactivityImpulsivity', q.id, e.target.value)}
-                          placeholder="Describe other examples..."
-                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
-                        />
+                        <label className={`radio-card flex-1 ${symptomPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                          <input
+                            type="radio"
+                            name={`${q.id}-present`}
+                            checked={symptomPresent === false}
+                            onChange={() => handleSymptomPresentToggle('hyperactivityImpulsivity', q.id, false)}
+                            className="sr-only"
+                          />
+                          <div className="radio-indicator mr-3" />
+                          <span className="flex-1 text-sm font-medium text-gray-900">No</span>
+                        </label>
                       </div>
                     </div>
 
-                    {/* Childhood follow-up */}
+                    {/* Examples checkboxes - only show if symptom present */}
+                    {symptomPresent && (
+                      <div className="mb-4 pl-4 border-l-2 border-blue-200">
+                        <p className="text-sm font-medium text-gray-700 mb-3">Check all examples that apply:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                          {q.examples.map((example) => (
+                            <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedExamples.includes(example.id)}
+                                onChange={() => handleExampleToggle('hyperactivityImpulsivity', q.id, example.id)}
+                                className="flex-shrink-0 mt-0.5 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                              />
+                              <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                            </label>
+                          ))}
+                        </div>
+
+                        {/* Other field */}
+                        <div className="mt-3">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                          <input
+                            type="text"
+                            value={otherText}
+                            onChange={(e) => handleOtherTextChange('hyperactivityImpulsivity', q.id, e.target.value)}
+                            placeholder="Describe other examples..."
+                            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500 text-sm"
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Childhood follow-up - always show */}
                     <div className="pt-4 border-t border-gray-200">
                       <p className="text-sm font-medium text-gray-700 mb-3">
-                        And how was that for you in childhood - age 5-12?
+                        And did you experience similar symptoms as a child? (Aged 7-12)
                       </p>
                       <div className="flex gap-4">
                         <label className={`radio-card flex-1 ${childhoodPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>

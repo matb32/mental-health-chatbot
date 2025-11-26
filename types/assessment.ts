@@ -39,12 +39,13 @@ export interface PHQ9Answers {
 }
 
 // DIVA 5 (Diagnostic Interview for ADHD in adults)
-// Each question has multiple example checkboxes
-// Symptom is positive if 2 or more examples are checked (including "other" with text)
+// Each question asks if symptom present, then shows example checkboxes
+// Symptom is positive if symptomPresent=true AND 2+ examples checked (for scoring only)
 export interface DIVAQuestionResponse {
-  examples: string[]; // Array of selected example IDs
+  symptomPresent: boolean; // Yes/No - does the person experience this symptom?
+  examples: string[]; // Array of selected example IDs (only relevant if symptomPresent = true)
   otherText?: string; // Text for "Other" option
-  childhoodPresent: boolean; // Yes/No for childhood symptoms (age 5-12)
+  childhoodPresent: boolean; // Yes/No for childhood symptoms (age 7-12)
 }
 
 export interface DIVAAttention {
