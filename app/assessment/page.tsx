@@ -414,278 +414,526 @@ export default function AssessmentPage() {
         );
 
       case 'DIVA':
+        // Helper functions for checkbox handling
+        const handleExampleToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, exampleId: string) => {
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+          const currentExamples = currentQuestion.examples || [];
+
+          const newExamples = currentExamples.includes(exampleId)
+            ? currentExamples.filter((id: string) => id !== exampleId)
+            : [...currentExamples, exampleId];
+
+          setDivaAnswers({
+            ...divaAnswers,
+            [section]: {
+              ...divaAnswers[section],
+              [questionId]: { ...currentQuestion, examples: newExamples },
+            },
+          });
+        };
+
+        const handleOtherTextChange = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, text: string) => {
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+
+          setDivaAnswers({
+            ...divaAnswers,
+            [section]: {
+              ...divaAnswers[section],
+              [questionId]: { ...currentQuestion, otherText: text },
+            },
+          });
+        };
+
+        const handleChildhoodToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
+          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { examples: [], childhoodPresent: false };
+
+          setDivaAnswers({
+            ...divaAnswers,
+            [section]: {
+              ...divaAnswers[section],
+              [questionId]: { ...currentQuestion, childhoodPresent: value },
+            },
+          });
+        };
+
+        const handleCriterionCToggle = (area: 'workEducation' | 'relationship' | 'socialContacts' | 'selfConfidence', exampleId: string) => {
+          const currentExamples = divaAnswers.criterionC?.[area] || [];
+          const newExamples = currentExamples.includes(exampleId)
+            ? currentExamples.filter(id => id !== exampleId)
+            : [...currentExamples, exampleId];
+
+          setDivaAnswers({
+            ...divaAnswers,
+            criterionC: {
+              ...divaAnswers.criterionC,
+              [area]: newExamples,
+            },
+          });
+        };
+
         return (
           <div>
             <div className="section-header">
               <h2 className="text-2xl font-bold text-gray-900">
-                DIVA - Full ADHD Assessment
+                DIVA 5.0 - Diagnostic Interview for ADHD in Adults
               </h2>
               <p className="text-gray-600 mt-2">
-                For each question, answer about your current symptoms, then about your childhood (aged 5-12).
+                For each symptom, check the examples that apply to you. A symptom is considered present if you check 2 or more examples.
               </p>
             </div>
 
-            {/* Attention Questions */}
+            {/* Part 1: Attention Deficit Symptoms */}
             <div className="mb-12">
               <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
-                Attention
+                Part 1: Symptoms of Attention-Deficit (DSM-5 Criterion A1)
               </h3>
-              {divaAttentionQuestions.map((q) => (
-                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <legend className="text-lg font-medium text-gray-900 mb-4">
-                    {q.text}
-                  </legend>
+              {divaAttentionQuestions.map((q, idx) => {
+                const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { examples: [], otherText: '', childhoodPresent: false };
+                const selectedExamples = currentAnswer.examples || [];
+                const otherText = currentAnswer.otherText || '';
+                const childhoodPresent = currentAnswer.childhoodPresent || false;
 
-                  {/* Adult response */}
-                  <div className="mb-4">
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.attention as any)?.[q.id]?.adult === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
+                return (
+                  <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      {idx + 1}. {q.text}
+                    </h4>
+
+                    {/* Examples checkboxes */}
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Check all that apply:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {q.examples.map((example) => (
+                          <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedExamples.includes(example.id)}
+                              onChange={() => handleExampleToggle('attention', q.id, example.id)}
+                              className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* Other field */}
+                      <div className="mt-3">
+                        <label className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={otherText.length > 0}
+                            onChange={(e) => {
+                              if (!e.target.checked) {
+                                handleOtherTextChange('attention', q.id, '');
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                          />
+                          <span className="ml-2 text-sm font-medium text-gray-700">Other:</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={otherText}
+                          onChange={(e) => handleOtherTextChange('attention', q.id, e.target.value)}
+                          placeholder="Describe other examples..."
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Childhood follow-up */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        And how was that for you in childhood - age 5-12?
+                      </p>
+                      <div className="flex gap-4">
+                        <label className={`radio-card flex-1 ${childhoodPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`attention-${q.id}-adult`}
-                            checked={(divaAnswers.attention as any)?.[q.id]?.adult === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                attention: {
-                                  ...divaAnswers.attention,
-                                  [q.id]: { ...currentAnswer, adult: option.value },
-                                },
-                              });
-                            }}
+                            name={`attention-${q.id}-childhood`}
+                            checked={childhoodPresent === true}
+                            onChange={() => handleChildhoodToggle('attention', q.id, true)}
                             className="sr-only"
                           />
                           <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
+                          <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Childhood follow-up */}
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.attention as any)?.[q.id]?.child === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
+                        <label className={`radio-card flex-1 ${childhoodPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`attention-${q.id}-child`}
-                            checked={(divaAnswers.attention as any)?.[q.id]?.child === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                attention: {
-                                  ...divaAnswers.attention,
-                                  [q.id]: { ...currentAnswer, child: option.value },
-                                },
-                              });
-                            }}
+                            name={`attention-${q.id}-childhood`}
+                            checked={childhoodPresent === false}
+                            onChange={() => handleChildhoodToggle('attention', q.id, false)}
                             className="sr-only"
                           />
                           <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
+                          <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Hyperactivity Questions */}
+            {/* Part 2: Hyperactivity-Impulsivity Symptoms */}
             <div className="mb-12">
               <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
-                Hyperactivity
+                Part 2: Symptoms of Hyperactivity-Impulsivity (DSM-5 Criterion A2)
               </h3>
-              {divaHyperactivityQuestions.map((q) => (
-                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <legend className="text-lg font-medium text-gray-900 mb-4">
-                    {q.text}
-                  </legend>
+              {divaHyperactivityImpulsivityQuestions.map((q, idx) => {
+                const currentAnswer = (divaAnswers.hyperactivityImpulsivity as any)?.[q.id] || { examples: [], otherText: '', childhoodPresent: false };
+                const selectedExamples = currentAnswer.examples || [];
+                const otherText = currentAnswer.otherText || '';
+                const childhoodPresent = currentAnswer.childhoodPresent || false;
 
-                  <div className="mb-4">
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.hyperactivity as any)?.[q.id]?.adult === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
+                return (
+                  <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                    <h4 className="text-lg font-semibold text-gray-900 mb-4">
+                      {idx + 1}. {q.text}
+                    </h4>
+
+                    {/* Examples checkboxes */}
+                    <div className="mb-4">
+                      <p className="text-sm font-medium text-gray-700 mb-3">Check all that apply:</p>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                        {q.examples.map((example) => (
+                          <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={selectedExamples.includes(example.id)}
+                              onChange={() => handleExampleToggle('hyperactivityImpulsivity', q.id, example.id)}
+                              className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                            />
+                            <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                          </label>
+                        ))}
+                      </div>
+
+                      {/* Other field */}
+                      <div className="mt-3">
+                        <label className="flex items-start">
+                          <input
+                            type="checkbox"
+                            checked={otherText.length > 0}
+                            onChange={(e) => {
+                              if (!e.target.checked) {
+                                handleOtherTextChange('hyperactivityImpulsivity', q.id, '');
+                              }
+                            }}
+                            className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                          />
+                          <span className="ml-2 text-sm font-medium text-gray-700">Other:</span>
+                        </label>
+                        <input
+                          type="text"
+                          value={otherText}
+                          onChange={(e) => handleOtherTextChange('hyperactivityImpulsivity', q.id, e.target.value)}
+                          placeholder="Describe other examples..."
+                          className="mt-1 w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Childhood follow-up */}
+                    <div className="pt-4 border-t border-gray-200">
+                      <p className="text-sm font-medium text-gray-700 mb-3">
+                        And how was that for you in childhood - age 5-12?
+                      </p>
+                      <div className="flex gap-4">
+                        <label className={`radio-card flex-1 ${childhoodPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`hyperactivity-${q.id}-adult`}
-                            checked={(divaAnswers.hyperactivity as any)?.[q.id]?.adult === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.hyperactivity as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                hyperactivity: {
-                                  ...divaAnswers.hyperactivity,
-                                  [q.id]: { ...currentAnswer, adult: option.value },
-                                },
-                              });
-                            }}
+                            name={`hyperactivityImpulsivity-${q.id}-childhood`}
+                            checked={childhoodPresent === true}
+                            onChange={() => handleChildhoodToggle('hyperactivityImpulsivity', q.id, true)}
                             className="sr-only"
                           />
                           <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
+                          <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.hyperactivity as any)?.[q.id]?.child === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
+                        <label className={`radio-card flex-1 ${childhoodPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`hyperactivity-${q.id}-child`}
-                            checked={(divaAnswers.hyperactivity as any)?.[q.id]?.child === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.hyperactivity as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                hyperactivity: {
-                                  ...divaAnswers.hyperactivity,
-                                  [q.id]: { ...currentAnswer, child: option.value },
-                                },
-                              });
-                            }}
+                            name={`hyperactivityImpulsivity-${q.id}-childhood`}
+                            checked={childhoodPresent === false}
+                            onChange={() => handleChildhoodToggle('hyperactivityImpulsivity', q.id, false)}
                             className="sr-only"
                           />
                           <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
+                          <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
-                      ))}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
-            {/* Impulsivity Questions */}
-            <div className="mb-12">
-              <h3 className="text-xl font-bold text-gray-900 mb-4 pb-3 border-b-2 border-primary-600">
-                Impulsivity
-              </h3>
-              {divaImpulsivityQuestions.map((q) => (
-                <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
-                  <legend className="text-lg font-medium text-gray-900 mb-4">
-                    {q.text}
-                  </legend>
+            {/* Supplement - Criterion A */}
+            <div className="mb-12 p-6 bg-blue-50 rounded-lg border-2 border-blue-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Supplement Questions (Criterion A)</h3>
 
-                  <div className="mb-4">
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.impulsivity as any)?.[q.id]?.adult === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`impulsivity-${q.id}-adult`}
-                            checked={(divaAnswers.impulsivity as any)?.[q.id]?.adult === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.impulsivity as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                impulsivity: {
-                                  ...divaAnswers.impulsivity,
-                                  [q.id]: { ...currentAnswer, adult: option.value },
-                                },
-                              });
-                            }}
-                            className="sr-only"
-                          />
-                          <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-
-                  <div className="pt-4 border-t border-gray-200">
-                    <p className="text-sm font-medium text-gray-700 mb-3">{divaChildhoodFollowUp}</p>
-                    <div className="flex gap-4">
-                      {divaResponseOptions.map((option) => (
-                        <label
-                          key={String(option.value)}
-                          className={`radio-card flex-1 ${
-                            (divaAnswers.impulsivity as any)?.[q.id]?.child === option.value
-                              ? 'border-primary-600 bg-primary-50'
-                              : 'border-gray-300'
-                          }`}
-                        >
-                          <input
-                            type="radio"
-                            name={`impulsivity-${q.id}-child`}
-                            checked={(divaAnswers.impulsivity as any)?.[q.id]?.child === option.value}
-                            onChange={() => {
-                              const currentAnswer = (divaAnswers.impulsivity as any)?.[q.id] || { adult: false, child: false };
-                              setDivaAnswers({
-                                ...divaAnswers,
-                                impulsivity: {
-                                  ...divaAnswers.impulsivity,
-                                  [q.id]: { ...currentAnswer, child: option.value },
-                                },
-                              });
-                            }}
-                            className="sr-only"
-                          />
-                          <div className="radio-indicator mr-3" />
-                          <span className="flex-1 text-sm font-medium text-gray-900">
-                            {option.label}
-                          </span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
+              <div className="mb-6">
+                <p className="text-base font-medium text-gray-900 mb-3">{divaSupplementQuestions.adult}</p>
+                <div className="flex gap-4">
+                  <label className={`radio-card flex-1 ${divaAnswers.supplement?.adultMoreThanOthers === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="supplement-adult"
+                      checked={divaAnswers.supplement?.adultMoreThanOthers === true}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        supplement: { ...divaAnswers.supplement, adultMoreThanOthers: true },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
+                  </label>
+                  <label className={`radio-card flex-1 ${divaAnswers.supplement?.adultMoreThanOthers === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="supplement-adult"
+                      checked={divaAnswers.supplement?.adultMoreThanOthers === false}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        supplement: { ...divaAnswers.supplement, adultMoreThanOthers: false },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">No</span>
+                  </label>
                 </div>
-              ))}
+              </div>
+
+              <div>
+                <p className="text-base font-medium text-gray-900 mb-3">{divaSupplementQuestions.childhood}</p>
+                <div className="flex gap-4">
+                  <label className={`radio-card flex-1 ${divaAnswers.supplement?.childhoodMoreThanOthers === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="supplement-childhood"
+                      checked={divaAnswers.supplement?.childhoodMoreThanOthers === true}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        supplement: { ...divaAnswers.supplement, childhoodMoreThanOthers: true },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
+                  </label>
+                  <label className={`radio-card flex-1 ${divaAnswers.supplement?.childhoodMoreThanOthers === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="supplement-childhood"
+                      checked={divaAnswers.supplement?.childhoodMoreThanOthers === false}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        supplement: { ...divaAnswers.supplement, childhoodMoreThanOthers: false },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">No</span>
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            {/* Criterion B */}
+            <div className="mb-12 p-6 bg-amber-50 rounded-lg border-2 border-amber-200">
+              <h3 className="text-xl font-bold text-gray-900 mb-6">Criterion B - Age of Onset</h3>
+
+              <div className="mb-4">
+                <p className="text-base font-medium text-gray-900 mb-3">{divaCriterionB.question}</p>
+                <div className="flex gap-4">
+                  <label className={`radio-card flex-1 ${divaAnswers.criterionB?.alwaysHadSymptoms === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="criterion-b"
+                      checked={divaAnswers.criterionB?.alwaysHadSymptoms === true}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        criterionB: { alwaysHadSymptoms: true, ageOfOnset: undefined },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
+                  </label>
+                  <label className={`radio-card flex-1 ${divaAnswers.criterionB?.alwaysHadSymptoms === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
+                    <input
+                      type="radio"
+                      name="criterion-b"
+                      checked={divaAnswers.criterionB?.alwaysHadSymptoms === false}
+                      onChange={() => setDivaAnswers({
+                        ...divaAnswers,
+                        criterionB: { ...divaAnswers.criterionB, alwaysHadSymptoms: false },
+                      })}
+                      className="sr-only"
+                    />
+                    <div className="radio-indicator mr-3" />
+                    <span className="flex-1 text-sm font-medium text-gray-900">No</span>
+                  </label>
+                </div>
+              </div>
+
+              {divaAnswers.criterionB?.alwaysHadSymptoms === false && (
+                <div className="mt-4">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    {divaCriterionB.followUp}
+                  </label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="100"
+                    value={divaAnswers.criterionB?.ageOfOnset || ''}
+                    onChange={(e) => setDivaAnswers({
+                      ...divaAnswers,
+                      criterionB: { ...divaAnswers.criterionB, ageOfOnset: parseInt(e.target.value) || undefined },
+                    })}
+                    className="w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                    placeholder="Age"
+                  />
+                </div>
+              )}
+            </div>
+
+            {/* Criterion C - Impairment */}
+            <div className="mb-12">
+              <h3 className="text-xl font-bold text-gray-900 mb-6 pb-3 border-b-2 border-primary-600">
+                Criterion C - Functional Impairment
+              </h3>
+              <p className="text-gray-600 mb-6">
+                In which areas do you have / have you had problems with these symptoms? Check all that apply in each category.
+              </p>
+
+              {/* Work/Education */}
+              <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{divaCriterionC.workEducation.title}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {divaCriterionC.workEducation.examples.map((example) => (
+                    <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={divaAnswers.criterionC?.workEducation?.includes(example.id)}
+                        onChange={() => handleCriterionCToggle('workEducation', example.id)}
+                        className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                  <input
+                    type="text"
+                    value={divaAnswers.criterionC?.workEducationOther || ''}
+                    onChange={(e) => setDivaAnswers({
+                      ...divaAnswers,
+                      criterionC: { ...divaAnswers.criterionC, workEducationOther: e.target.value },
+                    })}
+                    placeholder="Describe other work/education problems..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              {/* Relationship/Family */}
+              <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{divaCriterionC.relationship.title}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {divaCriterionC.relationship.examples.map((example) => (
+                    <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={divaAnswers.criterionC?.relationship?.includes(example.id)}
+                        onChange={() => handleCriterionCToggle('relationship', example.id)}
+                        className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                  <input
+                    type="text"
+                    value={divaAnswers.criterionC?.relationshipOther || ''}
+                    onChange={(e) => setDivaAnswers({
+                      ...divaAnswers,
+                      criterionC: { ...divaAnswers.criterionC, relationshipOther: e.target.value },
+                    })}
+                    placeholder="Describe other relationship problems..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              {/* Social Contacts */}
+              <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{divaCriterionC.socialContacts.title}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {divaCriterionC.socialContacts.examples.map((example) => (
+                    <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={divaAnswers.criterionC?.socialContacts?.includes(example.id)}
+                        onChange={() => handleCriterionCToggle('socialContacts', example.id)}
+                        className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                  <input
+                    type="text"
+                    value={divaAnswers.criterionC?.socialContactsOther || ''}
+                    onChange={(e) => setDivaAnswers({
+                      ...divaAnswers,
+                      criterionC: { ...divaAnswers.criterionC, socialContactsOther: e.target.value },
+                    })}
+                    placeholder="Describe other social contact problems..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
+
+              {/* Self-Confidence */}
+              <div className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">{divaCriterionC.selfConfidence.title}</h4>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  {divaCriterionC.selfConfidence.examples.map((example) => (
+                    <label key={example.id} className="flex items-start p-2 hover:bg-gray-50 rounded cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={divaAnswers.criterionC?.selfConfidence?.includes(example.id)}
+                        onChange={() => handleCriterionCToggle('selfConfidence', example.id)}
+                        className="mt-1 h-4 w-4 text-primary-600 border-gray-300 rounded focus:ring-primary-500"
+                      />
+                      <span className="ml-2 text-sm text-gray-700">{example.text}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Other (please specify):</label>
+                  <input
+                    type="text"
+                    value={divaAnswers.criterionC?.selfConfidenceOther || ''}
+                    onChange={(e) => setDivaAnswers({
+                      ...divaAnswers,
+                      criterionC: { ...divaAnswers.criterionC, selfConfidenceOther: e.target.value },
+                    })}
+                    placeholder="Describe other self-confidence problems..."
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
+                  />
+                </div>
+              </div>
             </div>
           </div>
         );
