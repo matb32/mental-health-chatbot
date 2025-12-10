@@ -192,10 +192,18 @@ export default function AssessmentPage() {
       case 7:
         if (skipDIVA) return true;
         // Check that all 18 symptom questions are answered (9 attention + 9 hyperactivity-impulsivity)
-        return (
-          Object.keys(divaAnswers.attention || {}).length === 9 &&
-          Object.keys(divaAnswers.hyperactivityImpulsivity || {}).length === 9
-        );
+        const attentionComplete = Object.keys(divaAnswers.attention || {}).length === 9;
+        const hyperactivityComplete = Object.keys(divaAnswers.hyperactivityImpulsivity || {}).length === 9;
+
+        // Check supplement questions are answered
+        const supplementComplete =
+          typeof divaAnswers.supplement?.adultMoreThanOthers === 'boolean' &&
+          typeof divaAnswers.supplement?.childhoodMoreThanOthers === 'boolean';
+
+        // Check criterion B is answered
+        const criterionBComplete = typeof divaAnswers.criterionB?.alwaysHadSymptoms === 'boolean';
+
+        return attentionComplete && hyperactivityComplete && supplementComplete && criterionBComplete;
       default:
         return true;
     }
