@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+
 export default function PaymentSuccessPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -50,7 +53,8 @@ export default function PaymentSuccessPage() {
     };
 
     verifyPayment();
-  }, [searchParams]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (isVerifying) {
     return (

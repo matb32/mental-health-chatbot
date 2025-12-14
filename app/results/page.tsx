@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { CompleteAssessment, AssessmentResults } from '@/types/assessment';
 import {
@@ -16,9 +16,10 @@ import { generateGPReport, generateHTMLReport } from '@/utils/report-generator';
 // Initialize Stripe
 const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
 
+export const dynamic = 'force-dynamic';
+
 export default function ResultsPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [assessment, setAssessment] = useState<CompleteAssessment | null>(null);
   const [results, setResults] = useState<AssessmentResults | null>(null);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
