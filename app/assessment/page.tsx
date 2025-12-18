@@ -191,9 +191,15 @@ export default function AssessmentPage() {
         return true;
       case 7:
         if (skipDIVA) return true;
-        // Check that all 18 symptom questions are answered (9 attention + 9 hyperactivity-impulsivity)
-        const attentionComplete = Object.keys(divaAnswers.attention || {}).length === 9;
-        const hyperactivityComplete = Object.keys(divaAnswers.hyperactivityImpulsivity || {}).length === 9;
+        // Check that all 18 symptom questions have symptomPresent answered (9 attention + 9 hyperactivity-impulsivity)
+        // Each question must have symptomPresent set (true or false)
+        const attentionAnswers = divaAnswers.attention || {};
+        const attentionComplete = Object.keys(attentionAnswers).length === 9 &&
+          Object.values(attentionAnswers).every((ans: any) => typeof ans.symptomPresent === 'boolean');
+
+        const hyperactivityAnswers = divaAnswers.hyperactivityImpulsivity || {};
+        const hyperactivityComplete = Object.keys(hyperactivityAnswers).length === 9 &&
+          Object.values(hyperactivityAnswers).every((ans: any) => typeof ans.symptomPresent === 'boolean');
 
         // Check supplement questions are answered
         const supplementComplete =
@@ -423,19 +429,22 @@ export default function AssessmentPage() {
       case 'DIVA':
         // Helper functions for checkbox handling
         const handleSymptomPresentToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-
           setDivaAnswers({
             ...divaAnswers,
             [section]: {
               ...divaAnswers[section],
-              [questionId]: { ...currentQuestion, symptomPresent: value, examples: value ? currentQuestion.examples : [] },
+              [questionId]: {
+                ...(divaAnswers[section]?.[questionId] || { examples: [], otherText: '', childhoodPresent: false }),
+                symptomPresent: value,
+                // Clear examples if switching to "No"
+                examples: value ? (divaAnswers[section]?.[questionId]?.examples || []) : [],
+              },
             },
           });
         };
 
         const handleExampleToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, exampleId: string) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
+          const currentQuestion = divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
           const currentExamples = currentQuestion.examples || [];
 
           const newExamples = currentExamples.includes(exampleId)
@@ -446,31 +455,36 @@ export default function AssessmentPage() {
             ...divaAnswers,
             [section]: {
               ...divaAnswers[section],
-              [questionId]: { ...currentQuestion, examples: newExamples },
+              [questionId]: {
+                ...currentQuestion,
+                examples: newExamples,
+              },
             },
           });
         };
 
         const handleOtherTextChange = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, text: string) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-
           setDivaAnswers({
             ...divaAnswers,
             [section]: {
               ...divaAnswers[section],
-              [questionId]: { ...currentQuestion, otherText: text },
+              [questionId]: {
+                ...(divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], childhoodPresent: false }),
+                otherText: text,
+              },
             },
           });
         };
 
         const handleChildhoodToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
-          const currentQuestion = (divaAnswers[section] as any)?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-
           setDivaAnswers({
             ...divaAnswers,
             [section]: {
               ...divaAnswers[section],
-              [questionId]: { ...currentQuestion, childhoodPresent: value },
+              [questionId]: {
+                ...(divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], otherText: '' }),
+                childhoodPresent: value,
+              },
             },
           });
         };
@@ -499,6 +513,14 @@ export default function AssessmentPage() {
               <p className="text-gray-600 mt-2">
                 For each symptom question, first indicate if you experience it, then provide examples.
               </p>
+              <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
+                <p className="text-sm text-blue-800">
+                  <strong>Guidance:</strong> All questions default to "No". If you answer "Yes" to a symptom,
+                  providing <strong>2 or more specific examples</strong> helps strengthen the clinical assessment.
+                  You can provide as many or as few examples as you wish - the report will note your responses.
+                  You can still complete the assessment even if you don't provide examples.
+                </p>
+              </div>
             </div>
 
             {/* Part 1: Attention Deficit Symptoms */}
@@ -507,11 +529,12 @@ export default function AssessmentPage() {
                 Part 1: Symptoms of Attention-Deficit (DSM-5 Criterion A1)
               </h3>
               {divaAttentionQuestions.map((q, idx) => {
-                const currentAnswer = (divaAnswers.attention as any)?.[q.id] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-                const symptomPresent = currentAnswer.symptomPresent || false;
+                const currentAnswer = divaAnswers.attention?.[q.id] || {};
+                // Default to false (No) if not set
+                const symptomPresent = currentAnswer.symptomPresent ?? false;
                 const selectedExamples = currentAnswer.examples || [];
                 const otherText = currentAnswer.otherText || '';
-                const childhoodPresent = currentAnswer.childhoodPresent || false;
+                const childhoodPresent = currentAnswer.childhoodPresent ?? false;
 
                 return (
                   <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">
@@ -621,11 +644,12 @@ export default function AssessmentPage() {
                 Part 2: Symptoms of Hyperactivity-Impulsivity (DSM-5 Criterion A2)
               </h3>
               {divaHyperactivityImpulsivityQuestions.map((q, idx) => {
-                const currentAnswer = (divaAnswers.hyperactivityImpulsivity as any)?.[q.id] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-                const symptomPresent = currentAnswer.symptomPresent || false;
+                const currentAnswer = divaAnswers.hyperactivityImpulsivity?.[q.id] || {};
+                // Default to false (No) if not set
+                const symptomPresent = currentAnswer.symptomPresent ?? false;
                 const selectedExamples = currentAnswer.examples || [];
                 const otherText = currentAnswer.otherText || '';
-                const childhoodPresent = currentAnswer.childhoodPresent || false;
+                const childhoodPresent = currentAnswer.childhoodPresent ?? false;
 
                 return (
                   <div key={q.id} className="mb-8 p-6 bg-white rounded-lg border border-gray-200 shadow-sm">

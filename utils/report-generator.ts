@@ -3,6 +3,58 @@ import {
   CompleteAssessment,
   AssessmentResults,
 } from '@/types/assessment';
+import { divaAttentionQuestions, divaHyperactivityImpulsivityQuestions } from '@/data/diva5-questions';
+
+// Helper function to format DIVA symptom details with examples
+function formatDIVASymptomDetails(answers: any, questionsList: any[], sectionName: string): string {
+  let output = `\n${sectionName}:\n`;
+
+  questionsList.forEach((q, idx) => {
+    const answer = answers?.[q.id];
+    if (!answer) return;
+
+    const symptomPresent = answer.symptomPresent === true;
+    const examplesCount = answer.examples?.length || 0;
+    const hasOtherText = answer.otherText && answer.otherText.trim().length > 0;
+    const totalExamples = examplesCount + (hasOtherText ? 1 : 0);
+
+    if (symptomPresent) {
+      output += `\n${idx + 1}. ${q.text}\n`;
+      output += `   Response: YES\n`;
+
+      if (totalExamples === 0) {
+        output += `   Examples provided: None (Note: 2+ examples recommended for diagnostic criteria)\n`;
+      } else if (totalExamples < 2) {
+        output += `   Examples provided: ${totalExamples} (Note: 2+ examples recommended for diagnostic criteria)\n`;
+      } else {
+        output += `   Examples provided: ${totalExamples}\n`;
+      }
+
+      if (examplesCount > 0) {
+        const exampleTexts = answer.examples.map((exId: string) => {
+          const example = q.examples.find((ex: any) => ex.id === exId);
+          return example ? `     - ${example.text}` : '';
+        }).filter(Boolean);
+
+        if (exampleTexts.length > 0) {
+          output += exampleTexts.join('\n') + '\n';
+        }
+      }
+
+      if (hasOtherText) {
+        output += `     - Other: ${answer.otherText}\n`;
+      }
+
+      if (answer.childhoodPresent === true) {
+        output += `   Also present in childhood: YES\n`;
+      } else if (answer.childhoodPresent === false) {
+        output += `   Also present in childhood: NO\n`;
+      }
+    }
+  });
+
+  return output;
+}
 
 export function generateGPReport(
   assessment: CompleteAssessment,
@@ -85,6 +137,14 @@ criteria for ADHD: 9 inattention items, 6 hyperactivity items, and 3 impulsivity
 Each symptom is assessed for both childhood (ages 5-12) and current adult presentation
 using Yes/No responses. DSM-5 requires 5 or more symptoms in each category, present
 since childhood and currently causing impairment.
+
+Note: For diagnostic validation, 2 or more specific examples are recommended for each
+symptom marked as present. Symptoms with fewer examples are noted below but may require
+further clinical exploration.
+
+DETAILED SYMPTOM PRESENTATION:
+${formatDIVASymptomDetails(assessment.diva.attention, divaAttentionQuestions, 'INATTENTION SYMPTOMS')}
+${formatDIVASymptomDetails(assessment.diva.hyperactivityImpulsivity, divaHyperactivityImpulsivityQuestions, 'HYPERACTIVITY-IMPULSIVITY SYMPTOMS')}
 
 ================================================================================
 CO-OCCURRING MENTAL HEALTH CONCERNS
