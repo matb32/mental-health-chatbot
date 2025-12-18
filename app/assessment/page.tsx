@@ -597,23 +597,27 @@ export default function AssessmentPage() {
                         <label className={`radio-card flex-1 ${symptomPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`${q.id}-present`}
+                            name={`attention-${q.id}-present`}
                             checked={symptomPresent === true}
                             onChange={() => handleSymptomPresentToggle('attention', q.id, true)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${symptomPresent === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {symptomPresent === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
                         <label className={`radio-card flex-1 ${symptomPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`${q.id}-present`}
+                            name={`attention-${q.id}-present`}
                             checked={symptomPresent === false}
                             onChange={() => handleSymptomPresentToggle('attention', q.id, false)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${symptomPresent === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {symptomPresent === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
                       </div>
@@ -665,7 +669,9 @@ export default function AssessmentPage() {
                             onChange={() => handleChildhoodToggle('attention', q.id, true)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${childhoodPresent === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {childhoodPresent === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
                         <label className={`radio-card flex-1 ${childhoodPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -676,7 +682,9 @@ export default function AssessmentPage() {
                             onChange={() => handleChildhoodToggle('attention', q.id, false)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${childhoodPresent === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {childhoodPresent === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
                       </div>
@@ -712,23 +720,27 @@ export default function AssessmentPage() {
                         <label className={`radio-card flex-1 ${symptomPresent === true ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`${q.id}-present`}
+                            name={`hyperactivityImpulsivity-${q.id}-present`}
                             checked={symptomPresent === true}
                             onChange={() => handleSymptomPresentToggle('hyperactivityImpulsivity', q.id, true)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${symptomPresent === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {symptomPresent === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
                         <label className={`radio-card flex-1 ${symptomPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
                           <input
                             type="radio"
-                            name={`${q.id}-present`}
+                            name={`hyperactivityImpulsivity-${q.id}-present`}
                             checked={symptomPresent === false}
                             onChange={() => handleSymptomPresentToggle('hyperactivityImpulsivity', q.id, false)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${symptomPresent === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {symptomPresent === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
                       </div>
@@ -780,7 +792,9 @@ export default function AssessmentPage() {
                             onChange={() => handleChildhoodToggle('hyperactivityImpulsivity', q.id, true)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${childhoodPresent === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {childhoodPresent === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                         </label>
                         <label className={`radio-card flex-1 ${childhoodPresent === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -791,7 +805,9 @@ export default function AssessmentPage() {
                             onChange={() => handleChildhoodToggle('hyperactivityImpulsivity', q.id, false)}
                             className="sr-only"
                           />
-                          <div className="radio-indicator mr-3" />
+                          <div className={`radio-indicator mr-3 ${childhoodPresent === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {childhoodPresent === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                           <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                         </label>
                       </div>
@@ -819,7 +835,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.supplement?.adultMoreThanOthers === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.supplement?.adultMoreThanOthers === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                   </label>
                   <label className={`radio-card flex-1 ${divaAnswers.supplement?.adultMoreThanOthers === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -833,7 +851,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.supplement?.adultMoreThanOthers === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.supplement?.adultMoreThanOthers === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                   </label>
                 </div>
@@ -853,7 +873,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.supplement?.childhoodMoreThanOthers === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.supplement?.childhoodMoreThanOthers === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                   </label>
                   <label className={`radio-card flex-1 ${divaAnswers.supplement?.childhoodMoreThanOthers === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -867,7 +889,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.supplement?.childhoodMoreThanOthers === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.supplement?.childhoodMoreThanOthers === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                   </label>
                 </div>
@@ -892,7 +916,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.criterionB?.alwaysHadSymptoms === true ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.criterionB?.alwaysHadSymptoms === true && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">Yes</span>
                   </label>
                   <label className={`radio-card flex-1 ${divaAnswers.criterionB?.alwaysHadSymptoms === false ? 'border-primary-600 bg-primary-50' : 'border-gray-300'}`}>
@@ -906,7 +932,9 @@ export default function AssessmentPage() {
                       }))}
                       className="sr-only"
                     />
-                    <div className="radio-indicator mr-3" />
+                    <div className={`radio-indicator mr-3 ${divaAnswers.criterionB?.alwaysHadSymptoms === false ? 'border-primary-600 bg-primary-600' : 'border-gray-300'}`}>
+                            {divaAnswers.criterionB?.alwaysHadSymptoms === false && <div className="h-2.5 w-2.5 rounded-full bg-white" />}
+                          </div>
                     <span className="flex-1 text-sm font-medium text-gray-900">No</span>
                   </label>
                 </div>
