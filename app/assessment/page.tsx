@@ -72,27 +72,58 @@ export default function AssessmentPage() {
   const [gad7Answers, setGad7Answers] = useState<Partial<GAD7Answers>>({});
   const [phq9Answers, setPhq9Answers] = useState<Partial<PHQ9Answers>>({});
   const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
-  const [divaAnswers, setDivaAnswers] = useState<any>({
-    attention: {},
-    hyperactivityImpulsivity: {},
-    supplement: {
-      adultMoreThanOthers: false,
-      childhoodMoreThanOthers: false,
-    },
-    criterionB: {
-      alwaysHadSymptoms: false,
-      ageOfOnset: undefined,
-    },
-    criterionC: {
-      workEducation: [],
-      workEducationOther: '',
-      relationship: [],
-      relationshipOther: '',
-      socialContacts: [],
-      socialContactsOther: '',
-      selfConfidence: [],
-      selfConfidenceOther: '',
-    },
+
+  // Initialize DIVA answers with all questions defaulting to "No" (false)
+  const [divaAnswers, setDivaAnswers] = useState<any>(() => {
+    const initQuestionState = () => ({
+      symptomPresent: false,
+      examples: [],
+      otherText: '',
+      childhoodPresent: false
+    });
+
+    return {
+      attention: {
+        q1: initQuestionState(),
+        q2: initQuestionState(),
+        q3: initQuestionState(),
+        q4: initQuestionState(),
+        q5: initQuestionState(),
+        q6: initQuestionState(),
+        q7: initQuestionState(),
+        q8: initQuestionState(),
+        q9: initQuestionState(),
+      },
+      hyperactivityImpulsivity: {
+        q1: initQuestionState(),
+        q2: initQuestionState(),
+        q3: initQuestionState(),
+        q4: initQuestionState(),
+        q5: initQuestionState(),
+        q6: initQuestionState(),
+        q7: initQuestionState(),
+        q8: initQuestionState(),
+        q9: initQuestionState(),
+      },
+      supplement: {
+        adultMoreThanOthers: false,
+        childhoodMoreThanOthers: false,
+      },
+      criterionB: {
+        alwaysHadSymptoms: false,
+        ageOfOnset: undefined,
+      },
+      criterionC: {
+        workEducation: [],
+        workEducationOther: '',
+        relationship: [],
+        relationshipOther: '',
+        socialContacts: [],
+        socialContactsOther: '',
+        selfConfidence: [],
+        selfConfidenceOther: '',
+      },
+    };
   });
 
   // Calculate steps dynamically
@@ -427,80 +458,84 @@ export default function AssessmentPage() {
         );
 
       case 'DIVA':
-        // Helper functions for checkbox handling
+        // Helper functions for checkbox handling - Using functional updates to prevent stale closure bugs
         const handleSymptomPresentToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
-          setDivaAnswers({
-            ...divaAnswers,
+          setDivaAnswers((prev: any) => ({
+            ...prev,
             [section]: {
-              ...divaAnswers[section],
+              ...prev[section],
               [questionId]: {
-                ...(divaAnswers[section]?.[questionId] || { examples: [], otherText: '', childhoodPresent: false }),
+                ...prev[section][questionId],
                 symptomPresent: value,
                 // Clear examples if switching to "No"
-                examples: value ? (divaAnswers[section]?.[questionId]?.examples || []) : [],
+                examples: value ? prev[section][questionId].examples : [],
               },
             },
-          });
+          }));
         };
 
         const handleExampleToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, exampleId: string) => {
-          const currentQuestion = divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], otherText: '', childhoodPresent: false };
-          const currentExamples = currentQuestion.examples || [];
+          setDivaAnswers((prev: any) => {
+            const currentQuestion = prev[section][questionId];
+            const currentExamples = currentQuestion.examples || [];
 
-          const newExamples = currentExamples.includes(exampleId)
-            ? currentExamples.filter((id: string) => id !== exampleId)
-            : [...currentExamples, exampleId];
+            const newExamples = currentExamples.includes(exampleId)
+              ? currentExamples.filter((id: string) => id !== exampleId)
+              : [...currentExamples, exampleId];
 
-          setDivaAnswers({
-            ...divaAnswers,
-            [section]: {
-              ...divaAnswers[section],
-              [questionId]: {
-                ...currentQuestion,
-                examples: newExamples,
+            return {
+              ...prev,
+              [section]: {
+                ...prev[section],
+                [questionId]: {
+                  ...currentQuestion,
+                  examples: newExamples,
+                },
               },
-            },
+            };
           });
         };
 
         const handleOtherTextChange = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, text: string) => {
-          setDivaAnswers({
-            ...divaAnswers,
+          setDivaAnswers((prev: any) => ({
+            ...prev,
             [section]: {
-              ...divaAnswers[section],
+              ...prev[section],
               [questionId]: {
-                ...(divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], childhoodPresent: false }),
+                ...prev[section][questionId],
                 otherText: text,
               },
             },
-          });
+          }));
         };
 
         const handleChildhoodToggle = (section: 'attention' | 'hyperactivityImpulsivity', questionId: string, value: boolean) => {
-          setDivaAnswers({
-            ...divaAnswers,
+          setDivaAnswers((prev: any) => ({
+            ...prev,
             [section]: {
-              ...divaAnswers[section],
+              ...prev[section],
               [questionId]: {
-                ...(divaAnswers[section]?.[questionId] || { symptomPresent: false, examples: [], otherText: '' }),
+                ...prev[section][questionId],
                 childhoodPresent: value,
               },
             },
-          });
+          }));
         };
 
         const handleCriterionCToggle = (area: 'workEducation' | 'relationship' | 'socialContacts' | 'selfConfidence', exampleId: string) => {
-          const currentExamples = divaAnswers.criterionC?.[area] || [];
-          const newExamples = currentExamples.includes(exampleId)
-            ? currentExamples.filter((id: string) => id !== exampleId)
-            : [...currentExamples, exampleId];
+          setDivaAnswers((prev: any) => {
+            const currentExamples = prev.criterionC[area] || [];
+            const newExamples = currentExamples.includes(exampleId)
+              ? currentExamples.filter((id: string) => id !== exampleId)
+              : [...currentExamples, exampleId];
 
-          setDivaAnswers({
-            ...divaAnswers,
-            criterionC: {
-              ...divaAnswers.criterionC,
-              [area]: newExamples,
-            },
+            return {
+              ...prev,
+              criterionC: {
+                ...prev.criterionC,
+                [area]: newExamples,
+              },
+            };
           });
         };
 
@@ -765,10 +800,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="supplement-adult"
                       checked={divaAnswers.supplement?.adultMoreThanOthers === true}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
-                        supplement: { ...divaAnswers.supplement, adultMoreThanOthers: true },
-                      })}
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
+                        supplement: { ...prev.supplement, adultMoreThanOthers: true },
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -779,10 +814,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="supplement-adult"
                       checked={divaAnswers.supplement?.adultMoreThanOthers === false}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
-                        supplement: { ...divaAnswers.supplement, adultMoreThanOthers: false },
-                      })}
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
+                        supplement: { ...prev.supplement, adultMoreThanOthers: false },
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -799,10 +834,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="supplement-childhood"
                       checked={divaAnswers.supplement?.childhoodMoreThanOthers === true}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
-                        supplement: { ...divaAnswers.supplement, childhoodMoreThanOthers: true },
-                      })}
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
+                        supplement: { ...prev.supplement, childhoodMoreThanOthers: true },
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -813,10 +848,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="supplement-childhood"
                       checked={divaAnswers.supplement?.childhoodMoreThanOthers === false}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
-                        supplement: { ...divaAnswers.supplement, childhoodMoreThanOthers: false },
-                      })}
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
+                        supplement: { ...prev.supplement, childhoodMoreThanOthers: false },
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -838,10 +873,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="criterion-b"
                       checked={divaAnswers.criterionB?.alwaysHadSymptoms === true}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
                         criterionB: { alwaysHadSymptoms: true, ageOfOnset: undefined },
-                      })}
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -852,10 +887,10 @@ export default function AssessmentPage() {
                       type="radio"
                       name="criterion-b"
                       checked={divaAnswers.criterionB?.alwaysHadSymptoms === false}
-                      onChange={() => setDivaAnswers({
-                        ...divaAnswers,
-                        criterionB: { ...divaAnswers.criterionB, alwaysHadSymptoms: false },
-                      })}
+                      onChange={() => setDivaAnswers((prev: any) => ({
+                        ...prev,
+                        criterionB: { ...prev.criterionB, alwaysHadSymptoms: false },
+                      }))}
                       className="sr-only"
                     />
                     <div className="radio-indicator mr-3" />
@@ -874,10 +909,10 @@ export default function AssessmentPage() {
                     min="0"
                     max="100"
                     value={divaAnswers.criterionB?.ageOfOnset || ''}
-                    onChange={(e) => setDivaAnswers({
-                      ...divaAnswers,
-                      criterionB: { ...divaAnswers.criterionB, ageOfOnset: parseInt(e.target.value) || undefined },
-                    })}
+                    onChange={(e) => setDivaAnswers((prev: any) => ({
+                      ...prev,
+                      criterionB: { ...prev.criterionB, ageOfOnset: parseInt(e.target.value) || undefined },
+                    }))}
                     className="w-32 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                     placeholder="Age"
                   />
@@ -915,10 +950,10 @@ export default function AssessmentPage() {
                   <input
                     type="text"
                     value={divaAnswers.criterionC?.workEducationOther || ''}
-                    onChange={(e) => setDivaAnswers({
-                      ...divaAnswers,
-                      criterionC: { ...divaAnswers.criterionC, workEducationOther: e.target.value },
-                    })}
+                    onChange={(e) => setDivaAnswers((prev: any) => ({
+                      ...prev,
+                      criterionC: { ...prev.criterionC, workEducationOther: e.target.value },
+                    }))}
                     placeholder="Describe other work/education problems..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   />
@@ -946,10 +981,10 @@ export default function AssessmentPage() {
                   <input
                     type="text"
                     value={divaAnswers.criterionC?.relationshipOther || ''}
-                    onChange={(e) => setDivaAnswers({
-                      ...divaAnswers,
-                      criterionC: { ...divaAnswers.criterionC, relationshipOther: e.target.value },
-                    })}
+                    onChange={(e) => setDivaAnswers((prev: any) => ({
+                      ...prev,
+                      criterionC: { ...prev.criterionC, relationshipOther: e.target.value },
+                    }))}
                     placeholder="Describe other relationship problems..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   />
@@ -977,10 +1012,10 @@ export default function AssessmentPage() {
                   <input
                     type="text"
                     value={divaAnswers.criterionC?.socialContactsOther || ''}
-                    onChange={(e) => setDivaAnswers({
-                      ...divaAnswers,
-                      criterionC: { ...divaAnswers.criterionC, socialContactsOther: e.target.value },
-                    })}
+                    onChange={(e) => setDivaAnswers((prev: any) => ({
+                      ...prev,
+                      criterionC: { ...prev.criterionC, socialContactsOther: e.target.value },
+                    }))}
                     placeholder="Describe other social contact problems..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   />
@@ -1008,10 +1043,10 @@ export default function AssessmentPage() {
                   <input
                     type="text"
                     value={divaAnswers.criterionC?.selfConfidenceOther || ''}
-                    onChange={(e) => setDivaAnswers({
-                      ...divaAnswers,
-                      criterionC: { ...divaAnswers.criterionC, selfConfidenceOther: e.target.value },
-                    })}
+                    onChange={(e) => setDivaAnswers((prev: any) => ({
+                      ...prev,
+                      criterionC: { ...prev.criterionC, selfConfidenceOther: e.target.value },
+                    }))}
                     placeholder="Describe other self-confidence problems..."
                     className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:ring-primary-500 focus:border-primary-500"
                   />
