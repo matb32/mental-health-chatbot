@@ -74,7 +74,7 @@ export default function AssessmentPage() {
   const [asrsAnswers, setAsrsAnswers] = useState<Partial<ASRSAnswers>>({});
 
   // Initialize DIVA answers with all questions defaulting to "No" (false)
-  const [divaAnswers, setDivaAnswers] = useState<any>(() => {
+  const initializeDIVAState = () => {
     const initQuestionState = () => ({
       symptomPresent: false,
       examples: [],
@@ -124,7 +124,9 @@ export default function AssessmentPage() {
         selfConfidenceOther: '',
       },
     };
-  });
+  };
+
+  const [divaAnswers, setDivaAnswers] = useState<any>(initializeDIVAState);
 
   // Calculate steps dynamically
   const getSteps = () => {
@@ -542,12 +544,23 @@ export default function AssessmentPage() {
         return (
           <div>
             <div className="section-header">
-              <h2 className="text-2xl font-bold text-gray-900">
-                DIVA 5.0 - Diagnostic Interview for ADHD in Adults
-              </h2>
-              <p className="text-gray-600 mt-2">
-                For each symptom question, first indicate if you experience it, then provide examples.
-              </p>
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    DIVA 5.0 - Diagnostic Interview for ADHD in Adults
+                  </h2>
+                  <p className="text-gray-600 mt-2">
+                    For each symptom question, first indicate if you experience it, then provide examples.
+                  </p>
+                </div>
+                <button
+                  onClick={() => setDivaAnswers(initializeDIVAState())}
+                  className="ml-4 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary-500"
+                  type="button"
+                >
+                  Reset DIVA Section
+                </button>
+              </div>
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mt-4">
                 <p className="text-sm text-blue-800">
                   <strong>Guidance:</strong> All questions default to "No". If you answer "Yes" to a symptom,
