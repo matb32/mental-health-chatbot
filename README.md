@@ -6,6 +6,8 @@ A comprehensive web-based Adult ADHD assessment tool using validated clinical sc
 
 This platform provides a structured, evidence-based assessment for adults who suspect they may have ADHD. It generates a comprehensive medical report that can be presented to a GP to support a referral to Adult Psychiatry services.
 
+**Latest Update:** Fixed DIVA section radio button defaults and state management.
+
 ## ✨ Features
 
 ### Assessment Tools
