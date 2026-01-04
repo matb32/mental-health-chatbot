@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { generateGPReport } from '@/utils/report-generator';
 
+// Use Node.js runtime for nodemailer compatibility
+export const runtime = 'nodejs';
+
 export async function POST(req: NextRequest) {
   try {
     const { assessment, results, recipientEmail } = await req.json();
