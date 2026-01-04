@@ -13,6 +13,7 @@ export default function PaymentSuccessPage() {
   const [isVerifying, setIsVerifying] = useState(true);
   const [paymentVerified, setPaymentVerified] = useState(false);
   const [error, setError] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
 
   useEffect(() => {
     const sessionId = searchParams.get('session_id');
@@ -41,6 +42,9 @@ export default function PaymentSuccessPage() {
           // Store payment status in localStorage
           localStorage.setItem('reportPaid', 'true');
           localStorage.setItem('paymentSessionId', sessionId);
+
+          // Send email with report
+          sendEmailReport();
         } else {
           setError('Payment not completed');
         }
@@ -49,6 +53,58 @@ export default function PaymentSuccessPage() {
         setError('Failed to verify payment');
       } finally {
         setIsVerifying(false);
+      }
+    };
+
+    const sendEmailReport = async () => {
+      try {
+        // Get assessment data from localStorage
+        const stored = localStorage.getItem('assessment');
+        if (!stored) return;
+
+        const assessment = JSON.parse(stored);
+
+        // Calculate results (same logic as results page)
+        const { calculateASRSScore, calculateGAD7Score, calculatePHQ9Score, calculateDIVAScore, calculateOverallAssessment } = await import('@/utils/scoring');
+
+        const asrsScore = calculateASRSScore(assessment.asrs);
+        const gad7Score = calculateGAD7Score(assessment.gad7);
+        const phq9Score = calculatePHQ9Score(assessment.phq9);
+        const divaScore = calculateDIVAScore(assessment.diva);
+        const overallRecommendation = calculateOverallAssessment(
+          asrsScore,
+          gad7Score,
+          phq9Score,
+          divaScore
+        );
+
+        const results = {
+          asrs: asrsScore,
+          gad7: gad7Score,
+          phq9: phq9Score,
+          diva: divaScore,
+          overallRecommendation,
+        };
+
+        // Send email
+        const emailResponse = await fetch('/api/send-report', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            assessment,
+            results,
+            recipientEmail: assessment.personalInfo.email,
+          }),
+        });
+
+        if (emailResponse.ok) {
+          setEmailSent(true);
+        }
+      } catch (err) {
+        console.error('Error sending email:', err);
+        // Don't show error to user - email is optional
       }
     };
 
@@ -243,12 +299,22 @@ export default function PaymentSuccessPage() {
 
           {/* Receipt Info */}
           <div className="mt-8 pt-8 border-t border-gray-200">
-            <p className="text-sm text-gray-600">
-              A receipt has been sent to your email address.
-            </p>
-            <p className="text-xs text-gray-500 mt-2">
-              Session ID: {searchParams.get('session_id')?.substring(0, 20)}...
-            </p>
+            <div className="space-y-2">
+              <p className="text-sm text-gray-600">
+                A payment receipt has been sent to your email address.
+              </p>
+              {emailSent && (
+                <div className="flex items-center text-sm text-green-600">
+                  <svg className="w-4 h-4 mr-2" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                  </svg>
+                  Your assessment report has been emailed to you
+                </div>
+              )}
+              <p className="text-xs text-gray-500 mt-2">
+                Session ID: {searchParams.get('session_id')?.substring(0, 20)}...
+              </p>
+            </div>
           </div>
         </div>
       </div>
