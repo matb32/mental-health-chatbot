@@ -29,22 +29,11 @@ body {
   @apply relative flex cursor-pointer rounded-lg border bg-white p-4 shadow-sm focus:outline-none;
 }
 
-.radio-card input:checked ~ .radio-indicator {
-  @apply border-primary-600 bg-primary-600;
-}
-
 .radio-indicator {
   @apply flex h-5 w-5 items-center justify-center rounded-full border-2 border-gray-300;
 }
 
-.radio-indicator::after {
-  content: '';
-  @apply hidden h-2.5 w-2.5 rounded-full bg-white;
-}
-
-.radio-card input:checked ~ .radio-indicator::after {
-  @apply block;
-}
+/* Removed ::after pseudo-element - now using React-controlled styling instead */
 
 .progress-bar {
   @apply h-2 rounded-full bg-primary-600 transition-all duration-300;
